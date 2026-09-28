@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../../application/fuel/load_fuel_history.dart';
 import '../../domain/fuel/fuel_cycle.dart';
 import '../theme/app_theme.dart';
 import 'fuel_brand_assets.dart';
 import 'fuel_formatters.dart';
 
+typedef FuelHistoryLoader = Future<FuelCycleBuildResult> Function(
+  int vehicleId,
+);
 typedef FuelFormBuilder = Widget Function(
   BuildContext context,
   VoidCallback saved,
@@ -26,7 +28,7 @@ class FuelHistoryScreen extends StatefulWidget {
   });
 
   final int vehicleId;
-  final LoadFuelHistory loadFuelHistory;
+  final FuelHistoryLoader loadFuelHistory;
   final FuelFormBuilder fuelFormBuilder;
   final CycleDetailsBuilder? cycleDetailsBuilder;
 

@@ -385,8 +385,8 @@ class _FuelEventFormScreenState extends State<FuelEventFormScreen> {
     final date = await showDatePicker(
       context: context,
       initialDate: _occurredAt,
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime(1),
+      lastDate: DateTime(9999),
     );
     if (date == null || !mounted) return;
     final time = await showTimePicker(
