@@ -1,6 +1,8 @@
 import 'package:drift/drift.dart';
 
-enum MaintenanceCategory { service, repairs, accessories }
+import '../../domain/maintenance/maintenance.dart';
+
+export '../../domain/maintenance/maintenance.dart' show MaintenanceCategory;
 
 enum AttachmentKind { image, pdf }
 
