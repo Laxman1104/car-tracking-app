@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../application/fuel/create_fuel_event.dart';
+import '../../application/fuel/update_fuel_event.dart';
+import '../../domain/fuel/fuel_cycle.dart';
 import '../../domain/validation/scaled_decimal.dart';
 import '../theme/app_theme.dart';
 import '../widgets/fixed_decimal_input_formatter.dart';
@@ -13,12 +15,16 @@ class FuelEventFormScreen extends StatefulWidget {
     super.key,
     required this.vehicleId,
     required this.createFuelEvent,
+    this.updateFuelEvent,
+    this.initialEvent,
     this.initialOccurredAt,
     this.onSaved,
   });
 
   final int vehicleId;
   final CreateFuelEvent createFuelEvent;
+  final UpdateFuelEvent? updateFuelEvent;
+  final FuelEventSnapshot? initialEvent;
   final DateTime? initialOccurredAt;
   final FuelEventSaved? onSaved;
 
@@ -63,7 +69,25 @@ class _FuelEventFormScreenState extends State<FuelEventFormScreen> {
   @override
   void initState() {
     super.initState();
-    _occurredAt = widget.initialOccurredAt ?? DateTime.now();
+    final initial = widget.initialEvent;
+    _occurredAt =
+        initial?.occurredAt.toLocal() ??
+        widget.initialOccurredAt ??
+        DateTime.now();
+    if (initial != null) {
+      _odometerController.text = initial.odometerKm.toString();
+      _litresController.text = _formatScaled(
+        initial.fuelVolumeMillilitres,
+        3,
+        displayDigits: 2,
+      );
+      _costController.text = _formatScaled(initial.costSen, 2);
+      if (initial.tripDistanceMetres case final trip?) {
+        _tripBController.text = _formatScaled(trip, 3, trimZeros: true);
+      }
+      _selectedBrand = initial.fuelBrand;
+      _isFullTank = initial.isFullTank;
+    }
     _moveCursorToEnd(_litresController);
     _moveCursorToEnd(_costController);
   }
@@ -80,7 +104,11 @@ class _FuelEventFormScreenState extends State<FuelEventFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('New Fuel Event')),
+      appBar: AppBar(
+        title: Text(
+          widget.initialEvent == null ? 'New Fuel Event' : 'Edit Fuel Event',
+        ),
+      ),
       body: SafeArea(
         top: false,
         child: Form(
@@ -428,29 +456,30 @@ class _FuelEventFormScreenState extends State<FuelEventFormScreen> {
 
     setState(() => _isSaving = true);
     try {
-      final eventId = await widget.createFuelEvent(
-        FuelEventInput(
-          vehicleId: widget.vehicleId,
-          occurredAt: _occurredAt,
-          odometerKm: int.parse(_odometerController.text.trim()),
-          fuelBrand: _selectedBrand!,
-          fuelVolumeMillilitres: ScaledDecimalParser.parse(
-            _litresController.text,
-            fractionDigits: 3,
-          )!,
-          costSen: ScaledDecimalParser.parse(
-            _costController.text,
-            fractionDigits: 2,
-          )!,
-          isFullTank: _isFullTank!,
-          tripDistanceMetres: _tripBController.text.trim().isEmpty
-              ? null
-              : ScaledDecimalParser.parse(
-                  _tripBController.text,
-                  fractionDigits: 3,
-                ),
-        ),
+      final input = FuelEventInput(
+        vehicleId: widget.vehicleId,
+        occurredAt: _occurredAt,
+        odometerKm: int.parse(_odometerController.text.trim()),
+        fuelBrand: _selectedBrand!,
+        fuelVolumeMillilitres: ScaledDecimalParser.parse(
+          _litresController.text,
+          fractionDigits: 3,
+        )!,
+        costSen: ScaledDecimalParser.parse(
+          _costController.text,
+          fractionDigits: 2,
+        )!,
+        isFullTank: _isFullTank!,
+        tripDistanceMetres: _tripBController.text.trim().isEmpty
+            ? null
+            : ScaledDecimalParser.parse(
+                _tripBController.text,
+                fractionDigits: 3,
+              ),
       );
+      final eventId = widget.initialEvent == null
+          ? await widget.createFuelEvent(input)
+          : await widget.updateFuelEvent!(widget.initialEvent!.id, input);
       if (!mounted) return;
       if (widget.onSaved case final callback?) {
         callback(eventId);
@@ -690,4 +719,25 @@ String _formatDateTime(DateTime value) {
   final minute = value.minute.toString().padLeft(2, '0');
   return '${value.day} ${months[value.month - 1]} ${value.year} · '
       '$hour:$minute';
+}
+
+String _formatScaled(
+  int value,
+  int scaleDigits, {
+  int? displayDigits,
+  bool trimZeros = false,
+}) {
+  final digits = value.toString().padLeft(scaleDigits + 1, '0');
+  var result =
+      '${digits.substring(0, digits.length - scaleDigits)}.'
+      '${digits.substring(digits.length - scaleDigits)}';
+  if (displayDigits != null && displayDigits < scaleDigits) {
+    result = double.parse(result).toStringAsFixed(displayDigits);
+  }
+  if (trimZeros) {
+    result = result
+        .replaceFirst(RegExp(r'0+$'), '')
+        .replaceFirst(RegExp(r'\.$'), '');
+  }
+  return result;
 }

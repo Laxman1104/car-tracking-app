@@ -17,6 +17,10 @@ typedef CycleDetailsBuilder = Widget Function(
   CompletedFuelCycle cycle,
   int cycleNumber,
 );
+typedef FuelEventDetailsBuilder = Widget Function(
+  BuildContext context,
+  FuelEventSnapshot event,
+);
 
 class FuelHistoryScreen extends StatefulWidget {
   const FuelHistoryScreen({
@@ -25,12 +29,14 @@ class FuelHistoryScreen extends StatefulWidget {
     required this.loadFuelHistory,
     required this.fuelFormBuilder,
     this.cycleDetailsBuilder,
+    this.fuelEventDetailsBuilder,
   });
 
   final int vehicleId;
   final FuelHistoryLoader loadFuelHistory;
   final FuelFormBuilder fuelFormBuilder;
   final CycleDetailsBuilder? cycleDetailsBuilder;
+  final FuelEventDetailsBuilder? fuelEventDetailsBuilder;
 
   @override
   State<FuelHistoryScreen> createState() => _FuelHistoryScreenState();
@@ -91,18 +97,29 @@ class _FuelHistoryScreenState extends State<FuelHistoryScreen> {
             result: snapshot.requireData,
             onRefresh: _reload,
             onCycleTap: _openCycle,
+            onEventTap: _openEvent,
           );
         },
       ),
     );
   }
 
-  void _openCycle(CompletedFuelCycle cycle, int number) {
+  Future<void> _openCycle(CompletedFuelCycle cycle, int number) async {
     final builder = widget.cycleDetailsBuilder;
     if (builder == null) return;
-    Navigator.of(context).push<void>(
+    final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (context) => builder(context, cycle, number)),
     );
+    if (changed == true && mounted) await _reload();
+  }
+
+  Future<void> _openEvent(FuelEventSnapshot event) async {
+    final builder = widget.fuelEventDetailsBuilder;
+    if (builder == null) return;
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (context) => builder(context, event)),
+    );
+    if (changed == true && mounted) await _reload();
   }
 }
 
@@ -111,11 +128,13 @@ class _FuelHistoryBody extends StatelessWidget {
     required this.result,
     required this.onRefresh,
     required this.onCycleTap,
+    required this.onEventTap,
   });
 
   final FuelCycleBuildResult result;
   final Future<void> Function() onRefresh;
   final void Function(CompletedFuelCycle cycle, int number) onCycleTap;
+  final void Function(FuelEventSnapshot event) onEventTap;
 
   @override
   Widget build(BuildContext context) {
@@ -133,13 +152,14 @@ class _FuelHistoryBody extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
         children: [
           if (result.pendingCycle case final pending?) ...[
-            _PendingCycleCard(pending: pending),
+            _PendingCycleCard(pending: pending, onEventTap: onEventTap),
             const SizedBox(height: 28),
           ],
           if (result.preReferenceEvents.isNotEmpty &&
               result.pendingCycle == null) ...[
             _AwaitingStartingReferenceCard(
-              eventCount: result.preReferenceEvents.length,
+              events: result.preReferenceEvents,
+              onEventTap: onEventTap,
             ),
             const SizedBox(height: 24),
           ],
@@ -181,9 +201,10 @@ class _FuelHistoryBody extends StatelessWidget {
 }
 
 class _PendingCycleCard extends StatelessWidget {
-  const _PendingCycleCard({required this.pending});
+  const _PendingCycleCard({required this.pending, required this.onEventTap});
 
   final PendingFuelCycle pending;
+  final void Function(FuelEventSnapshot event) onEventTap;
 
   @override
   Widget build(BuildContext context) {
@@ -253,6 +274,22 @@ class _PendingCycleCard extends StatelessWidget {
                 ),
               ),
             ],
+            const SizedBox(height: 10),
+            ...pending.events.map(
+              (event) => ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  event.isFullTank ? 'Start Full' : 'Not Full · Partial',
+                ),
+                subtitle: Text(
+                  '${event.odometerKm} km · '
+                  '${formatLitresFromMillilitres(event.fuelVolumeMillilitres)} L',
+                ),
+                trailing: const Icon(Icons.edit_outlined, size: 18),
+                onTap: () => onEventTap(event),
+              ),
+            ),
           ],
         ),
       ),
@@ -622,44 +659,40 @@ class _CountChip extends StatelessWidget {
 }
 
 class _AwaitingStartingReferenceCard extends StatelessWidget {
-  const _AwaitingStartingReferenceCard({required this.eventCount});
+  const _AwaitingStartingReferenceCard({
+    required this.events,
+    required this.onEventTap,
+  });
 
-  final int eventCount;
+  final List<FuelEventSnapshot> events;
+  final void Function(FuelEventSnapshot event) onEventTap;
 
   @override
   Widget build(BuildContext context) {
+    final eventCount = events.length;
     return Card(
       key: const Key('awaiting-starting-reference-card'),
       margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            const _FuelIconBox(),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Waiting for a Full reference',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '$eventCount ${eventCount == 1 ? 'event was' : 'events were'} '
-                    'recorded before the first Full tank. Consumption starts '
-                    'from the next Full event.',
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      height: 1.35,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+      child: ExpansionTile(
+        leading: const _FuelIconBox(),
+        title: const Text(
+          'Waiting for a Full reference',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
+        subtitle: Text(
+          '$eventCount ${eventCount == 1 ? 'event was' : 'events were'} recorded '
+          'before the first Full tank.',
+        ),
+        children: events
+            .map(
+              (event) => ListTile(
+                title: Text('${event.fuelBrand} · Not Full'),
+                subtitle: Text('${event.odometerKm} km'),
+                trailing: const Icon(Icons.edit_outlined),
+                onTap: () => onEventTap(event),
+              ),
+            )
+            .toList(),
       ),
     );
   }

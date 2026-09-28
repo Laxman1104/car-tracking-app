@@ -10,10 +10,12 @@ class CycleDetailsScreen extends StatelessWidget {
     super.key,
     required this.cycle,
     required this.cycleNumber,
+    this.eventDetailsBuilder,
   });
 
   final CompletedFuelCycle cycle;
   final int cycleNumber;
+  final Widget Function(BuildContext, FuelEventSnapshot)? eventDetailsBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +59,19 @@ class CycleDetailsScreen extends StatelessWidget {
                   : 'Not Full · Partial',
               isOpeningBoundary: index == 0,
               isLast: index == cycle.events.length - 1,
+              onTap: eventDetailsBuilder == null
+                  ? null
+                  : () async {
+                      final changed = await Navigator.of(context).push<bool>(
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              eventDetailsBuilder!(context, event),
+                        ),
+                      );
+                      if (changed == true && context.mounted) {
+                        Navigator.pop(context, true);
+                      }
+                    },
             );
           }),
         ],
@@ -288,12 +303,14 @@ class _FuelEventTimelineRow extends StatelessWidget {
     required this.role,
     required this.isOpeningBoundary,
     required this.isLast,
+    this.onTap,
   });
 
   final FuelEventSnapshot event;
   final String role;
   final bool isOpeningBoundary;
   final bool isLast;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -370,72 +387,76 @@ class _FuelEventTimelineRow extends StatelessWidget {
               child: Card(
                 key: Key('cycle-event-${event.id}'),
                 margin: EdgeInsets.only(bottom: isLast ? 0 : 14),
-                child: Padding(
-                  padding: const EdgeInsets.all(15),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              event.fuelBrand,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          if (isOpeningBoundary)
-                            Tooltip(
-                              key: const Key('start-full-tooltip'),
-                              message:
-                                  'The Start Full establishes the opening fuel '
-                                  'level. Cycle totals include fuel added after '
-                                  'it through the End Full.',
-                              triggerMode: TooltipTriggerMode.longPress,
-                              showDuration: const Duration(seconds: 5),
-                              child: roleTag,
-                            )
-                          else
-                            roleTag,
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        formatFuelDateTime(event.occurredAt),
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.canvas.withValues(alpha: 0.35),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: onTap,
+                  child: Padding(
+                    padding: const EdgeInsets.all(15),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
                             Expanded(
-                              child: _EventValue(
-                                label: 'ODOMETER',
-                                value: '${event.odometerKm} km',
+                              child: Text(
+                                event.fuelBrand,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
-                            Expanded(
-                              child: _EventValue(
-                                label: 'FUEL & COST',
-                                value:
-                                    '${formatLitresFromMillilitres(event.fuelVolumeMillilitres)} L · '
-                                    '${formatRinggitFromSen(event.costSen)}',
-                              ),
-                            ),
+                            if (isOpeningBoundary)
+                              Tooltip(
+                                key: const Key('start-full-tooltip'),
+                                message:
+                                    'The Start Full establishes the opening fuel '
+                                    'level. Cycle totals include fuel added after '
+                                    'it through the End Full.',
+                                triggerMode: TooltipTriggerMode.longPress,
+                                showDuration: const Duration(seconds: 5),
+                                child: roleTag,
+                              )
+                            else
+                              roleTag,
                           ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          formatFuelDateTime(event.occurredAt),
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.canvas.withValues(alpha: 0.35),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _EventValue(
+                                  label: 'ODOMETER',
+                                  value: '${event.odometerKm} km',
+                                ),
+                              ),
+                              Expanded(
+                                child: _EventValue(
+                                  label: 'FUEL & COST',
+                                  value:
+                                      '${formatLitresFromMillilitres(event.fuelVolumeMillilitres)} L · '
+                                      '${formatRinggitFromSen(event.costSen)}',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
