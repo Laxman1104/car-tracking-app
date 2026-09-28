@@ -1,0 +1,285 @@
+import 'package:car_tracking_app/application/fuel/create_fuel_event.dart';
+import 'package:car_tracking_app/application/maintenance/maintenance_record_service.dart';
+import 'package:car_tracking_app/data/database/app_database.dart';
+import 'package:car_tracking_app/data/database/schema.dart';
+import 'package:car_tracking_app/data/repositories/attachment_repository.dart';
+import 'package:car_tracking_app/data/repositories/fuel_event_repository.dart';
+import 'package:car_tracking_app/data/repositories/maintenance_repository.dart';
+import 'package:car_tracking_app/data/repositories/service_reminder_repository.dart';
+import 'package:car_tracking_app/data/repositories/vehicle_repository.dart';
+import 'package:car_tracking_app/domain/maintenance/maintenance.dart';
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  late AppDatabase database;
+  late MaintenanceRepository maintenance;
+  late AttachmentRepository attachments;
+  late ServiceReminderRepository reminders;
+  late FuelEventRepository fuel;
+  late _FakeFiles files;
+  late _FakeScheduler scheduler;
+  late MaintenanceRecordService service;
+  late int vehicleId;
+
+  setUp(() async {
+    database = AppDatabase.forTesting(NativeDatabase.memory());
+    maintenance = MaintenanceRepository(database);
+    attachments = AttachmentRepository(database);
+    reminders = ServiceReminderRepository(database);
+    fuel = FuelEventRepository(database);
+    files = _FakeFiles();
+    scheduler = _FakeScheduler();
+    service = MaintenanceRecordService(
+      database: database,
+      maintenance: maintenance,
+      fuelEvents: fuel,
+      attachments: attachments,
+      reminders: reminders,
+      fileStore: files,
+      scheduler: scheduler,
+    );
+    vehicleId = await VehicleRepository(database)
+        .create(VehiclesCompanion.insert(displayName: 'Maintenance Test Car'));
+  });
+
+  tearDown(() => database.close());
+
+  MaintenanceRecordInput input({
+    MaintenanceCategory category = MaintenanceCategory.service,
+    int costSen = 0,
+    List<MaintenanceItemInput> items = const [],
+    DateTime? nextDate,
+    int? nextOdometer,
+    List<MaintenanceAttachmentInput> newAttachments = const [],
+    Set<int> retained = const {},
+    int odometer = 10240,
+    DateTime? occurredAt,
+  }) => MaintenanceRecordInput(
+    vehicleId: vehicleId,
+    occurredAt: occurredAt ?? DateTime.utc(2027, 3, 10),
+    odometerKm: odometer,
+    category: category,
+    workshop: 'Synthetic Service Centre',
+    totalCostSen: costSen,
+    items: items,
+    nextServiceDate: nextDate,
+    nextServiceOdometerKm: nextOdometer,
+    newAttachments: newAttachments,
+    retainedAttachmentIds: retained,
+  );
+
+  test(
+    'creates RM0 record with items, mixed attachments, and reminder',
+    () async {
+      final date = DateTime.utc(2027, 9, 10);
+      final id = await service.create(
+        input(
+          items: const [
+            MaintenanceItemInput(name: 'Warranty repair', costSen: 0),
+            MaintenanceItemInput(name: 'Inspection', costSen: 0),
+          ],
+          nextDate: date,
+          nextOdometer: 20000,
+          newAttachments: const [
+            MaintenanceAttachmentInput(
+              sourcePath: 'photo-source',
+              fileName: 'receipt.jpg',
+              kind: AttachmentKind.image,
+              mimeType: 'image/jpeg',
+              byteSize: 100,
+            ),
+            MaintenanceAttachmentInput(
+              sourcePath: 'pdf-source',
+              fileName: 'invoice.pdf',
+              kind: AttachmentKind.pdf,
+              mimeType: 'application/pdf',
+              byteSize: 200,
+            ),
+          ],
+        ),
+      );
+
+      final bundle = (await service.loadRecord(id))!;
+      expect(bundle.record.totalCostSen, 0);
+      expect(bundle.items, hasLength(2));
+      expect(bundle.attachments.map((entry) => entry.kind), [
+        AttachmentKind.image,
+        AttachmentKind.pdf,
+      ]);
+      expect(bundle.reminder!.targetOdometerKm, 20000);
+      expect(scheduler.scheduled[id]!.isAtSameMomentAs(date), isTrue);
+    },
+  );
+
+  test(
+    'edit replaces items, removes reminder, and retains selected file',
+    () async {
+      final id = await service.create(
+        input(
+          costSen: 62000,
+          items: const [MaintenanceItemInput(name: 'Oil', costSen: 62000)],
+          nextOdometer: 20000,
+          newAttachments: const [
+            MaintenanceAttachmentInput(
+              sourcePath: 'photo-source',
+              fileName: 'receipt.jpg',
+              kind: AttachmentKind.image,
+              mimeType: 'image/jpeg',
+              byteSize: 100,
+            ),
+            MaintenanceAttachmentInput(
+              sourcePath: 'pdf-source',
+              fileName: 'invoice.pdf',
+              kind: AttachmentKind.pdf,
+              mimeType: 'application/pdf',
+              byteSize: 200,
+            ),
+          ],
+        ),
+      );
+      final before = (await service.loadRecord(id))!;
+      final kept = before.attachments.first;
+
+      await service.update(
+        id,
+        input(
+          category: MaintenanceCategory.repairs,
+          costSen: 1000,
+          items: const [MaintenanceItemInput(name: 'Clip', costSen: 1000)],
+          retained: {kept.id},
+        ),
+      );
+
+      final after = (await service.loadRecord(id))!;
+      expect(after.record.category, MaintenanceCategory.repairs);
+      expect(after.items.single.name, 'Clip');
+      expect(after.attachments.single.id, kept.id);
+      expect(after.reminder, isNull);
+      expect(files.deleted, hasLength(1));
+      expect(scheduler.cancelled, contains(id));
+    },
+  );
+
+  test('maintenance chronology shares the fuel odometer timeline', () async {
+    await CreateFuelEvent(fuelEvents: fuel, maintenance: maintenance)(
+      FuelEventInput(
+        vehicleId: vehicleId,
+        occurredAt: DateTime.utc(2027, 3, 20),
+        odometerKm: 11000,
+        fuelBrand: 'Shell',
+        fuelVolumeMillilitres: 30000,
+        costSen: 6000,
+        isFullTank: true,
+      ),
+    );
+
+    expect(
+      () => service.create(input(odometer: 12000)),
+      throwsA(
+        isA<MaintenanceRecordException>().having(
+          (error) => error.issue,
+          'issue',
+          MaintenanceRecordIssue.odometerChronologyConflict,
+        ),
+      ),
+    );
+  });
+
+  test(
+    'delete cascades children and removes private attachment files',
+    () async {
+      final id = await service.create(
+        input(
+          items: const [MaintenanceItemInput(name: 'Oil', costSen: 0)],
+          nextOdometer: 20000,
+          newAttachments: const [
+            MaintenanceAttachmentInput(
+              sourcePath: 'photo-source',
+              fileName: 'receipt.jpg',
+              kind: AttachmentKind.image,
+              mimeType: 'image/jpeg',
+              byteSize: 100,
+            ),
+          ],
+        ),
+      );
+
+      await service.delete(id);
+
+      expect(await service.loadRecord(id), isNull);
+      expect(await maintenance.findItemsForRecord(id), isEmpty);
+      expect(await attachments.findForRecord(id), isEmpty);
+      expect(await reminders.findForRecord(id), isNull);
+      expect(files.deletedRecords, [id]);
+    },
+  );
+
+  test(
+    'only latest service notification is active and delete restores prior',
+    () async {
+      final firstDate = DateTime.utc(2027, 9, 10);
+      final firstId = await service.create(
+        input(nextDate: firstDate, nextOdometer: 20000),
+      );
+      final secondDate = DateTime.utc(2028, 3, 10);
+      final secondId = await service.create(
+        input(
+          occurredAt: DateTime.utc(2027, 9, 10),
+          odometer: 20000,
+          nextDate: secondDate,
+          nextOdometer: 30000,
+        ),
+      );
+
+      expect(scheduler.scheduled.keys, {secondId});
+      expect(
+        scheduler.scheduled[secondId]!.isAtSameMomentAs(secondDate),
+        isTrue,
+      );
+      await service.delete(secondId);
+      expect(scheduler.scheduled.keys, {firstId});
+      expect(scheduler.scheduled[firstId]!.isAtSameMomentAs(firstDate), isTrue);
+    },
+  );
+}
+
+class _FakeFiles implements AttachmentFileStore {
+  final deleted = <String>[];
+  final deletedRecords = <int>[];
+  int _counter = 0;
+
+  @override
+  Future<String> absolutePath(String relativePath) async => relativePath;
+
+  @override
+  Future<void> deleteFile(String relativePath) async =>
+      deleted.add(relativePath);
+
+  @override
+  Future<void> deleteRecordDirectory(int recordId) async =>
+      deletedRecords.add(recordId);
+
+  @override
+  Future<String> importFile(
+    int recordId,
+    MaintenanceAttachmentInput input,
+  ) async => '$recordId/${_counter++}_${input.fileName}';
+}
+
+class _FakeScheduler implements ServiceReminderScheduler {
+  final scheduled = <int, DateTime>{};
+  final cancelled = <int>[];
+
+  @override
+  Future<void> cancel(int maintenanceRecordId) async {
+    cancelled.add(maintenanceRecordId);
+    scheduled.remove(maintenanceRecordId);
+  }
+
+  @override
+  Future<void> schedule({
+    required int maintenanceRecordId,
+    required DateTime targetDate,
+  }) async => scheduled[maintenanceRecordId] = targetDate;
+}

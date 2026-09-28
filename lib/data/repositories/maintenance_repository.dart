@@ -66,4 +66,10 @@ class MaintenanceRepository {
       _database.maintenanceItems,
     )..where((item) => item.id.equals(id))).go();
   }
+
+  Future<int> deleteItemsForRecord(int recordId) {
+    return (_database.delete(
+      _database.maintenanceItems,
+    )..where((item) => item.maintenanceRecordId.equals(recordId))).go();
+  }
 }

@@ -24,6 +24,12 @@ class ServiceReminderRepository {
         .get();
   }
 
+  Future<ServiceReminder?> findForRecord(int recordId) {
+    return (_database.select(_database.serviceReminders)
+          ..where((reminder) => reminder.maintenanceRecordId.equals(recordId)))
+        .getSingleOrNull();
+  }
+
   Future<bool> update(ServiceReminder reminder) {
     return _database.update(_database.serviceReminders).replace(reminder);
   }
@@ -32,5 +38,11 @@ class ServiceReminderRepository {
     return (_database.delete(
       _database.serviceReminders,
     )..where((reminder) => reminder.id.equals(id))).go();
+  }
+
+  Future<int> deleteForRecord(int recordId) {
+    return (_database.delete(
+      _database.serviceReminders,
+    )..where((reminder) => reminder.maintenanceRecordId.equals(recordId))).go();
   }
 }
