@@ -3,5 +3,9 @@ targets:
     builders:
       drift_dev:
         options:
-          # The baseline schema is intentionally empty until Task 1.1.
+          # Repositories provide the explicit persistence API for this app.
           generate_manager: false
+          databases:
+            app_database: lib/data/database/app_database.dart
+          schema_dir: drift_schemas/
+          test_dir: test/data/database/migrations/
