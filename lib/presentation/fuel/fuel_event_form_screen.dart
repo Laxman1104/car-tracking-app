@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../application/fuel/create_fuel_event.dart';
 import '../../domain/validation/scaled_decimal.dart';
 import '../theme/app_theme.dart';
+import '../widgets/fixed_decimal_input_formatter.dart';
 
 typedef FuelEventSaved = void Function(int eventId);
 
@@ -37,8 +38,8 @@ class _FuelEventFormScreenState extends State<FuelEventFormScreen> {
 
   final _formKey = GlobalKey<FormState>();
   final _odometerController = TextEditingController();
-  final _litresController = TextEditingController();
-  final _costController = TextEditingController();
+  final _litresController = TextEditingController(text: '0.00');
+  final _costController = TextEditingController(text: '0.00');
   final _tripBController = TextEditingController();
 
   late DateTime _occurredAt;
@@ -63,6 +64,8 @@ class _FuelEventFormScreenState extends State<FuelEventFormScreen> {
   void initState() {
     super.initState();
     _occurredAt = widget.initialOccurredAt ?? DateTime.now();
+    _moveCursorToEnd(_litresController);
+    _moveCursorToEnd(_costController);
   }
 
   @override
@@ -152,22 +155,18 @@ class _FuelEventFormScreenState extends State<FuelEventFormScreen> {
               TextFormField(
                 key: const Key('fuel-litres-field'),
                 controller: _litresController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                inputFormatters: [_DecimalInputFormatter(3)],
+                keyboardType: TextInputType.number,
+                inputFormatters: const [FixedDecimalInputFormatter()],
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  hintText: '0.000',
-                  suffixText: 'L',
-                ),
+                onTap: () => _moveCursorToEnd(_litresController),
+                decoration: const InputDecoration(suffixText: 'L'),
                 validator: (value) {
                   final parsed = ScaledDecimalParser.parse(
                     value ?? '',
                     fractionDigits: 3,
                   );
                   if (parsed == null) {
-                    return 'Enter litres using up to 3 decimal places.';
+                    return 'Enter a valid fuel amount.';
                   }
                   if (parsed <= 0) return 'Litres must be greater than 0.';
                   return null;
@@ -179,15 +178,11 @@ class _FuelEventFormScreenState extends State<FuelEventFormScreen> {
               TextFormField(
                 key: const Key('fuel-cost-field'),
                 controller: _costController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                inputFormatters: [_DecimalInputFormatter(2)],
+                keyboardType: TextInputType.number,
+                inputFormatters: const [FixedDecimalInputFormatter()],
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  hintText: '0.00',
-                  prefixText: 'RM ',
-                ),
+                onTap: () => _moveCursorToEnd(_costController),
+                decoration: const InputDecoration(prefixText: 'RM '),
                 onChanged: (_) => setState(() {}),
                 validator: (value) {
                   final parsed = ScaledDecimalParser.parse(
@@ -195,7 +190,7 @@ class _FuelEventFormScreenState extends State<FuelEventFormScreen> {
                     fractionDigits: 2,
                   );
                   if (parsed == null) {
-                    return 'Enter a cost using up to 2 decimal places.';
+                    return 'Enter a valid fuel cost.';
                   }
                   return null;
                 },
@@ -381,6 +376,12 @@ class _FuelEventFormScreenState extends State<FuelEventFormScreen> {
     });
   }
 
+  void _moveCursorToEnd(TextEditingController controller) {
+    controller.selection = TextSelection.collapsed(
+      offset: controller.text.length,
+    );
+  }
+
   Future<void> _pickOccurrence() async {
     final date = await showDatePicker(
       context: context,
@@ -416,7 +417,14 @@ class _FuelEventFormScreenState extends State<FuelEventFormScreen> {
           : null;
     });
     final fieldsValid = _formKey.currentState!.validate();
-    if (!fieldsValid || _brandError != null || _fullTankError != null) return;
+    if (!fieldsValid || _brandError != null || _fullTankError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please complete the required fields shown above.'),
+        ),
+      );
+      return;
+    }
 
     setState(() => _isSaving = true);
     try {

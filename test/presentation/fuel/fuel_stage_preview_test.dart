@@ -27,5 +27,21 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('New Fuel Event'), findsOneWidget);
     expect(find.byKey(const Key('fuel-odometer-field')), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('fuel-odometer-field')),
+      '10600',
+    );
+    await tester.tap(find.byKey(const Key('fuel-brand-shell')));
+    await tester.enterText(find.byKey(const Key('fuel-litres-field')), '1200');
+    await tester.enterText(find.byKey(const Key('fuel-cost-field')), '2400');
+    await tester.tap(find.text('No'));
+    final save = find.byKey(const Key('save-fuel-event-button'));
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Fuel History'), findsOneWidget);
+    expect(find.text('12.00 L · RM24.00 pending'), findsOneWidget);
   });
 }

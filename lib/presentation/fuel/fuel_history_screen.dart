@@ -47,7 +47,9 @@ class _FuelHistoryScreenState extends State<FuelHistoryScreen> {
 
   Future<void> _reload() async {
     final history = widget.loadFuelHistory(widget.vehicleId);
-    setState(() => _history = history);
+    setState(() {
+      _history = history;
+    });
     await history;
   }
 
