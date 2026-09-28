@@ -44,4 +44,29 @@ class FuelHistoryCorrectionEngine {
     updated[matchingIndexes.single] = replacement;
     return fuelCycleEngine.build(updated);
   }
+
+  FuelCycleBuildResult deleteEvent({
+    required Iterable<FuelEventSnapshot> events,
+    required int vehicleId,
+    required int eventId,
+  }) {
+    final updated = events.toList();
+    final matchingIndexes = <int>[];
+    for (var index = 0; index < updated.length; index++) {
+      final event = updated[index];
+      if (event.id == eventId && event.vehicleId == vehicleId) {
+        matchingIndexes.add(index);
+      }
+    }
+    if (matchingIndexes.length != 1) {
+      throw FuelHistoryCorrectionException(
+        matchingIndexes.isEmpty
+            ? 'The fuel event being deleted does not exist.'
+            : 'Fuel event identity is not unique.',
+      );
+    }
+
+    updated.removeAt(matchingIndexes.single);
+    return fuelCycleEngine.build(updated);
+  }
 }

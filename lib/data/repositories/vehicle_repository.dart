@@ -32,4 +32,31 @@ class VehicleRepository {
       _database.vehicles,
     )..where((vehicle) => vehicle.id.equals(id))).go();
   }
+
+  Future<int> retireAndCreate({
+    required int activeVehicleId,
+    required DateTime retiredAt,
+    required VehiclesCompanion newVehicle,
+  }) {
+    return _database.transaction(() async {
+      final current = await findById(activeVehicleId);
+      if (current == null || !current.isActive) {
+        throw StateError('The vehicle being retired is not active.');
+      }
+
+      await update(
+        current.copyWith(
+          isActive: false,
+          retiredAt: Value(retiredAt),
+          updatedAt: retiredAt,
+        ),
+      );
+      return create(
+        newVehicle.copyWith(
+          isActive: const Value(true),
+          retiredAt: const Value(null),
+        ),
+      );
+    });
+  }
 }
