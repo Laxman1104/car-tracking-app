@@ -201,38 +201,6 @@ class _CycleSummary extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
-              Container(
-                key: const Key('cycle-totals-explanation'),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceStrong,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: AppColors.textSecondary,
-                      size: 17,
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'The Start Full establishes the opening fuel level. '
-                        'Cycle totals include fuel added after it through the '
-                        'End Full.',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 11,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),
@@ -330,6 +298,40 @@ class _FuelEventTimelineRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final asset = FuelBrandAssets.forBrand(event.fuelBrand);
+    final roleTag = Container(
+      key: isOpeningBoundary ? const Key('start-full-role-tag') : null,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: role.startsWith('Not Full')
+            ? const Color(0xFF3A3020)
+            : const Color(0xFF1C315E),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isOpeningBoundary) ...[
+            const Icon(
+              Icons.info_outline,
+              key: Key('start-full-info-icon'),
+              color: Color(0xFFAFC6FF),
+              size: 12,
+            ),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            role,
+            style: TextStyle(
+              color: role.startsWith('Not Full')
+                  ? AppColors.warning
+                  : const Color(0xFFAFC6FF),
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
     return Semantics(
       container: true,
       label:
@@ -384,42 +386,19 @@ class _FuelEventTimelineRow extends StatelessWidget {
                               ),
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: role.startsWith('Not Full')
-                                  ? const Color(0xFF3A3020)
-                                  : const Color(0xFF1C315E),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (isOpeningBoundary) ...[
-                                  const Icon(
-                                    Icons.info_outline,
-                                    key: Key('start-full-info-icon'),
-                                    color: Color(0xFFAFC6FF),
-                                    size: 12,
-                                  ),
-                                  const SizedBox(width: 4),
-                                ],
-                                Text(
-                                  role,
-                                  style: TextStyle(
-                                    color: role.startsWith('Not Full')
-                                        ? AppColors.warning
-                                        : const Color(0xFFAFC6FF),
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          if (isOpeningBoundary)
+                            Tooltip(
+                              key: const Key('start-full-tooltip'),
+                              message:
+                                  'The Start Full establishes the opening fuel '
+                                  'level. Cycle totals include fuel added after '
+                                  'it through the End Full.',
+                              triggerMode: TooltipTriggerMode.longPress,
+                              showDuration: const Duration(seconds: 5),
+                              child: roleTag,
+                            )
+                          else
+                            roleTag,
                         ],
                       ),
                       const SizedBox(height: 4),

@@ -58,6 +58,10 @@ void main() {
     expect(find.text('Start Full'), findsOneWidget);
     expect(find.textContaining('Baseline'), findsNothing);
     expect(find.byKey(const Key('start-full-info-icon')), findsOneWidget);
+    expect(find.byKey(const Key('start-full-tooltip')), findsOneWidget);
+    expect(find.byKey(const Key('cycle-totals-explanation')), findsNothing);
+    await tester.longPress(find.byKey(const Key('start-full-role-tag')));
+    await tester.pumpAndSettle();
     expect(
       find.text(
         'The Start Full establishes the opening fuel level. Cycle totals '
