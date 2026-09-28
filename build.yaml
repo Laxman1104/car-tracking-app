@@ -1,0 +1,7 @@
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          # The baseline schema is intentionally empty until Task 1.1.
+          generate_manager: false
