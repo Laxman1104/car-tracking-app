@@ -55,7 +55,16 @@ void main() {
 
     expect(find.byKey(const Key('cycle-event-1')), findsOneWidget);
     expect(find.byKey(const Key('cycle-event-2')), findsOneWidget);
-    expect(find.text('Start Full · Baseline'), findsOneWidget);
+    expect(find.text('Start Full'), findsOneWidget);
+    expect(find.textContaining('Baseline'), findsNothing);
+    expect(find.byKey(const Key('start-full-info-icon')), findsOneWidget);
+    expect(
+      find.text(
+        'The Start Full establishes the opening fuel level. Cycle totals '
+        'include fuel added after it through the End Full.',
+      ),
+      findsOneWidget,
+    );
     expect(find.text('End Full · Closing'), findsOneWidget);
     expect(find.text('Not Full · Partial'), findsNothing);
   });

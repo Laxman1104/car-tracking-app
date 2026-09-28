@@ -51,10 +51,11 @@ class CycleDetailsScreen extends StatelessWidget {
             return _FuelEventTimelineRow(
               event: event,
               role: index == 0
-                  ? 'Start Full · Baseline'
+                  ? 'Start Full'
                   : index == cycle.events.length - 1
                   ? 'End Full · Closing'
                   : 'Not Full · Partial',
+              isOpeningBoundary: index == 0,
               isLast: index == cycle.events.length - 1,
             );
           }),
@@ -200,6 +201,38 @@ class _CycleSummary extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 14),
+              Container(
+                key: const Key('cycle-totals-explanation'),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceStrong,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: AppColors.textSecondary,
+                      size: 17,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'The Start Full establishes the opening fuel level. '
+                        'Cycle totals include fuel added after it through the '
+                        'End Full.',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 11,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -285,11 +318,13 @@ class _FuelEventTimelineRow extends StatelessWidget {
   const _FuelEventTimelineRow({
     required this.event,
     required this.role,
+    required this.isOpeningBoundary,
     required this.isLast,
   });
 
   final FuelEventSnapshot event;
   final String role;
+  final bool isOpeningBoundary;
   final bool isLast;
 
   @override
@@ -360,15 +395,29 @@ class _FuelEventTimelineRow extends StatelessWidget {
                                   : const Color(0xFF1C315E),
                               borderRadius: BorderRadius.circular(999),
                             ),
-                            child: Text(
-                              role,
-                              style: TextStyle(
-                                color: role.startsWith('Not Full')
-                                    ? AppColors.warning
-                                    : const Color(0xFFAFC6FF),
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (isOpeningBoundary) ...[
+                                  const Icon(
+                                    Icons.info_outline,
+                                    key: Key('start-full-info-icon'),
+                                    color: Color(0xFFAFC6FF),
+                                    size: 12,
+                                  ),
+                                  const SizedBox(width: 4),
+                                ],
+                                Text(
+                                  role,
+                                  style: TextStyle(
+                                    color: role.startsWith('Not Full')
+                                        ? AppColors.warning
+                                        : const Color(0xFFAFC6FF),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
