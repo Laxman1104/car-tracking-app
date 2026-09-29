@@ -109,6 +109,7 @@ void main() {
       ]);
       expect(bundle.reminder!.targetOdometerKm, 20000);
       expect(scheduler.scheduled[id]!.isAtSameMomentAs(date), isTrue);
+      expect(scheduler.scheduledTitles[id], 'Service reminder');
     },
   );
 
@@ -337,6 +338,7 @@ class _FakeFiles implements AttachmentFileStore {
 
 class _FakeScheduler implements ServiceReminderScheduler {
   final scheduled = <int, DateTime>{};
+  final scheduledTitles = <int, String>{};
   final cancelled = <int>[];
   final mileageStages = <int, int>{};
 
@@ -350,7 +352,11 @@ class _FakeScheduler implements ServiceReminderScheduler {
   Future<void> schedule({
     required int maintenanceRecordId,
     required DateTime targetDate,
-  }) async => scheduled[maintenanceRecordId] = targetDate;
+    required String title,
+  }) async {
+    scheduled[maintenanceRecordId] = targetDate;
+    scheduledTitles[maintenanceRecordId] = title;
+  }
 
   @override
   Future<void> showMileageProgress({
@@ -373,6 +379,7 @@ class _ThrowingScheduler implements ServiceReminderScheduler {
   Future<void> schedule({
     required int maintenanceRecordId,
     required DateTime targetDate,
+    required String title,
   }) => Future.error(StateError('Notifications unavailable'));
 
   @override

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../application/maintenance/maintenance_record_service.dart';
+import '../../application/maintenance/service_calendar_launcher.dart';
 import '../../domain/maintenance/maintenance.dart';
 import '../fuel/fuel_formatters.dart';
 import '../theme/app_theme.dart';
@@ -15,12 +16,14 @@ class MaintenanceHistoryScreen extends StatefulWidget {
     required this.service,
     required this.fileStore,
     this.readOnly = false,
+    this.calendarLauncher = const PlatformServiceCalendarLauncher(),
   });
 
   final int vehicleId;
   final MaintenanceRecordService service;
   final AttachmentFileStore fileStore;
   final bool readOnly;
+  final ServiceCalendarLauncher calendarLauncher;
 
   @override
   State<MaintenanceHistoryScreen> createState() =>
@@ -98,6 +101,28 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
     if (mounted) await _reload();
   }
 
+  Future<void> _addToCalendar(MaintenanceHistoryData data) async {
+    final reminder = data.activeReminder;
+    final targetDate = reminder?.targetDate;
+    if (reminder == null || targetDate == null) return;
+    try {
+      await widget.calendarLauncher.addServiceReminder(
+        title: data.activeReminderTitle ?? 'Service reminder',
+        targetDate: targetDate,
+        targetOdometerKm: reminder.targetOdometerKm,
+      );
+      if (mounted) {
+        _message('Calendar opened. Save the event to add this reminder.');
+      }
+    } catch (_) {
+      if (mounted) _message('Could not open a calendar app.');
+    }
+  }
+
+  void _message(String value) =>
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(value)));
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -143,6 +168,11 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
                 _ReminderCard(
                   data: data,
                   onMarkDone: widget.readOnly ? null : _markReminderDone,
+                  onAddToCalendar:
+                      !widget.readOnly &&
+                          data.activeReminder?.targetDate != null
+                      ? () => _addToCalendar(data)
+                      : null,
                 ),
                 const SizedBox(height: 20),
                 SingleChildScrollView(
@@ -194,9 +224,14 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
 }
 
 class _ReminderCard extends StatelessWidget {
-  const _ReminderCard({required this.data, required this.onMarkDone});
+  const _ReminderCard({
+    required this.data,
+    required this.onMarkDone,
+    required this.onAddToCalendar,
+  });
   final MaintenanceHistoryData data;
   final Future<void> Function(int maintenanceRecordId)? onMarkDone;
+  final Future<void> Function()? onAddToCalendar;
 
   @override
   Widget build(BuildContext context) {
@@ -256,15 +291,13 @@ class _ReminderCard extends StatelessWidget {
         .firstOrNull;
     final sourceOdometer = sourceRecord?.record.odometerKm;
     final targetOdometer = reminder.targetOdometerKm;
-    double? mileageProgress;
-    if (sourceOdometer != null &&
-        targetOdometer != null &&
-        targetOdometer > sourceOdometer) {
-      mileageProgress =
-          ((data.currentOdometerKm ?? sourceOdometer) - sourceOdometer) /
-          (targetOdometer - sourceOdometer);
-      mileageProgress = mileageProgress.clamp(0, 1);
-    }
+    final mileageProgress = sourceOdometer == null || targetOdometer == null
+        ? null
+        : const MaintenanceDomainService().evaluateMileageProgress(
+            serviceOdometerKm: sourceOdometer,
+            currentOdometerKm: data.currentOdometerKm ?? sourceOdometer,
+            targetOdometerKm: targetOdometer,
+          );
     final parts = <String>[
       if (reminder.targetOdometerKm != null) '${reminder.targetOdometerKm} km',
       if (reminder.targetDate != null)
@@ -323,14 +356,23 @@ class _ReminderCard extends StatelessWidget {
             if (mileageProgress != null) ...[
               const SizedBox(height: 14),
               LinearProgressIndicator(
-                value: mileageProgress,
+                value: mileageProgress.ratio,
                 minHeight: 6,
                 borderRadius: BorderRadius.circular(99),
               ),
               const SizedBox(height: 7),
               Text(
-                '${(mileageProgress * 100).floor()}% toward mileage target · '
-                'alerts at 80%, 90%, and 100%',
+                '${mileageProgress.percentage}% of service interval completed',
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                '${_formatKm(mileageProgress.remainingKm)} km remaining · '
+                '${_formatKm(mileageProgress.travelledKm)} of '
+                '${_formatKm(mileageProgress.intervalKm)} km travelled',
                 style: const TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 12,
@@ -338,15 +380,28 @@ class _ReminderCard extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 10),
-            if (onMarkDone != null)
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  key: const Key('mark-service-reminder-done'),
-                  onPressed: () => onMarkDone!(reminder.maintenanceRecordId),
-                  icon: const Icon(Icons.check_circle_outline),
-                  label: const Text('Mark as done'),
-                ),
+            if (onMarkDone != null || onAddToCalendar != null)
+              Wrap(
+                alignment: WrapAlignment.end,
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  if (onAddToCalendar != null)
+                    TextButton.icon(
+                      key: const Key('add-service-reminder-to-calendar'),
+                      onPressed: onAddToCalendar,
+                      icon: const Icon(Icons.calendar_month_outlined),
+                      label: const Text('Add to calendar'),
+                    ),
+                  if (onMarkDone != null)
+                    TextButton.icon(
+                      key: const Key('mark-service-reminder-done'),
+                      onPressed: () =>
+                          onMarkDone!(reminder.maintenanceRecordId),
+                      icon: const Icon(Icons.check_circle_outline),
+                      label: const Text('Mark as done'),
+                    ),
+                ],
               ),
           ],
         ),
@@ -354,6 +409,11 @@ class _ReminderCard extends StatelessWidget {
     );
   }
 }
+
+String _formatKm(int value) => value.toString().replaceAllMapped(
+  RegExp(r'\B(?=(\d{3})+(?!\d))'),
+  (_) => ',',
+);
 
 class _FilterChip extends StatelessWidget {
   const _FilterChip({

@@ -150,9 +150,20 @@ void main() {
         (await VehicleRepository(target).findAll()).single.displayName,
         'Synthetic S70',
       );
+      final activeVehicle = await VehicleRepository(target).findActive();
+      expect(activeVehicle?.displayName, 'Synthetic S70');
       final records = await MaintenanceRepository(target)
           .findRecordsForVehicle(1);
       expect(records.single.serviceTitle, 'General Service');
+      final restoredHistory = await MaintenanceRecordService(
+        database: target,
+        maintenance: MaintenanceRepository(target),
+        fuelEvents: FuelEventRepository(target),
+        attachments: AttachmentRepository(target),
+        reminders: ServiceReminderRepository(target),
+        fileStore: targetFiles,
+      ).loadHistory(activeVehicle!.id);
+      expect(restoredHistory.currentOdometerKm, 10500);
       final attachments = await AttachmentRepository(target)
           .findForRecord(records.single.id);
       expect(

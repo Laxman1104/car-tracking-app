@@ -58,6 +58,21 @@ class ServiceReminderEvaluation {
   bool get isDue => state == ServiceReminderState.due;
 }
 
+class ServiceIntervalProgress {
+  const ServiceIntervalProgress({
+    required this.travelledKm,
+    required this.intervalKm,
+    required this.remainingKm,
+  });
+
+  final int travelledKm;
+  final int intervalKm;
+  final int remainingKm;
+
+  double get ratio => travelledKm / intervalKm;
+  int get percentage => (ratio * 100).floor();
+}
+
 class MaintenanceDomainService {
   const MaintenanceDomainService();
 
@@ -125,6 +140,22 @@ class MaintenanceDomainService {
           ? ServiceReminderState.upcoming
           : ServiceReminderState.due,
       reachedTriggers: Set.unmodifiable(reached),
+    );
+  }
+
+  ServiceIntervalProgress? evaluateMileageProgress({
+    required int serviceOdometerKm,
+    required int currentOdometerKm,
+    required int targetOdometerKm,
+  }) {
+    final interval = targetOdometerKm - serviceOdometerKm;
+    if (interval <= 0) return null;
+    final distanceTravelled = currentOdometerKm - serviceOdometerKm;
+    final travelled = distanceTravelled.clamp(0, interval);
+    return ServiceIntervalProgress(
+      travelledKm: travelled,
+      intervalKm: interval,
+      remainingKm: interval - travelled,
     );
   }
 }

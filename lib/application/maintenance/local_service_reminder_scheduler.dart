@@ -36,6 +36,7 @@ class LocalServiceReminderScheduler implements ServiceReminderScheduler {
     await initialize();
     await _plugin.cancel(id: maintenanceRecordId);
     await _plugin.cancel(id: maintenanceRecordId * 100 + 1);
+    await _plugin.cancel(id: maintenanceRecordId * 100 + 7);
     for (final stage in const [80, 90, 100]) {
       await _plugin.cancel(id: maintenanceRecordId * 100 + stage);
     }
@@ -45,6 +46,7 @@ class LocalServiceReminderScheduler implements ServiceReminderScheduler {
   Future<void> schedule({
     required int maintenanceRecordId,
     required DateTime targetDate,
+    required String title,
   }) async {
     await initialize();
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
@@ -56,33 +58,59 @@ class LocalServiceReminderScheduler implements ServiceReminderScheduler {
       if (allowed == false) return;
     }
     final localDate = targetDate.toLocal();
-    final scheduled = tz.TZDateTime(
+    final dueDate = tz.TZDateTime(
       tz.local,
       localDate.year,
       localDate.month,
       localDate.day,
       9,
     );
-    if (!scheduled.isAfter(tz.TZDateTime.now(tz.local))) return;
-    await _plugin.zonedSchedule(
-      id: maintenanceRecordId * 100 + 1,
-      title: 'Service reminder',
-      body: 'Your next whole-service target is due today.',
-      scheduledDate: scheduled,
-      notificationDetails: const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'service_reminders',
-          'Service reminders',
-          channelDescription: 'Date reminders for the next whole service',
-          importance: Importance.high,
-          priority: Priority.high,
-        ),
-        iOS: DarwinNotificationDetails(),
-      ),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      payload: 'maintenance:$maintenanceRecordId',
-    );
+    final oneWeekBefore = dueDate.subtract(const Duration(days: 7));
+    final now = tz.TZDateTime.now(tz.local);
+    if (oneWeekBefore.isAfter(now)) {
+      await _scheduleDateAlert(
+        id: maintenanceRecordId * 100 + 7,
+        maintenanceRecordId: maintenanceRecordId,
+        title: title,
+        body: 'Due in one week.',
+        scheduledDate: oneWeekBefore,
+      );
+    }
+    if (dueDate.isAfter(now)) {
+      await _scheduleDateAlert(
+        id: maintenanceRecordId * 100 + 1,
+        maintenanceRecordId: maintenanceRecordId,
+        title: title,
+        body: 'Due today.',
+        scheduledDate: dueDate,
+      );
+    }
   }
+
+  Future<void> _scheduleDateAlert({
+    required int id,
+    required int maintenanceRecordId,
+    required String title,
+    required String body,
+    required tz.TZDateTime scheduledDate,
+  }) => _plugin.zonedSchedule(
+    id: id,
+    title: title,
+    body: body,
+    scheduledDate: scheduledDate,
+    notificationDetails: const NotificationDetails(
+      android: AndroidNotificationDetails(
+        'service_reminders',
+        'Service reminders',
+        channelDescription: 'Date reminders for the next whole service',
+        importance: Importance.high,
+        priority: Priority.high,
+      ),
+      iOS: DarwinNotificationDetails(),
+    ),
+    androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+    payload: 'maintenance:$maintenanceRecordId',
+  );
 
   @override
   Future<void> showMileageProgress({

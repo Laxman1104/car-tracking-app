@@ -101,9 +101,24 @@ class _StageFourPreviewAppState extends State<StageFourPreviewApp> {
     _scheduler = widget.useInMemoryDatabase
         ? const NoopServiceReminderScheduler()
         : LocalServiceReminderScheduler();
-    _activeVehicle = widget.seedPreviewData
-        ? _seed()
-        : VehicleRepository(_database).findActive();
+    _activeVehicle = widget.seedPreviewData ? _seed() : _loadActiveVehicle();
+  }
+
+  Future<Vehicle?> _loadActiveVehicle() async {
+    final vehicle = await VehicleRepository(_database).findActive();
+    if (vehicle != null) {
+      await _maintenanceService.reconcileReminders(vehicle.id);
+    }
+    return vehicle;
+  }
+
+  Future<void> _refreshActiveVehicle() async {
+    final active = _loadActiveVehicle();
+    if (!mounted) return;
+    setState(() {
+      _activeVehicle = active;
+    });
+    await active;
   }
 
   Future<Vehicle> _seed() async {
@@ -265,11 +280,12 @@ class _StageFourPreviewAppState extends State<StageFourPreviewApp> {
             );
           },
           openSettings: () async {
-            final newVehicleId = await Navigator.push<int>(
+            await Navigator.push<int>(
               context,
               MaterialPageRoute(
                 builder: (_) => DataManagementScreen(
                   service: _portability,
+                  onDataRestored: _refreshActiveVehicle,
                   vehicleLifecycleBuilder: (_) => VehicleLifecycleScreen(
                     currentVehicle: vehicle,
                     vehicles: VehicleRepository(_database),
@@ -298,13 +314,7 @@ class _StageFourPreviewAppState extends State<StageFourPreviewApp> {
                 ),
               ),
             );
-            if (newVehicleId != null && mounted) {
-              setState(() {
-                _activeVehicle = VehicleRepository(_database)
-                    .findById(newVehicleId)
-                    .then((value) => value!);
-              });
-            }
+            if (mounted) await _refreshActiveVehicle();
           },
           openFuel: () async {
             await Navigator.push<void>(

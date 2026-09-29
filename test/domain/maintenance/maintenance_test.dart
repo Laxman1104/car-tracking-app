@@ -172,4 +172,17 @@ void main() {
       ServiceReminderTrigger.mileage,
     });
   });
+
+  test('mileage progress measures the service interval, not lifetime km', () {
+    final progress = service.evaluateMileageProgress(
+      serviceOdometerKm: 3500,
+      currentOdometerKm: 4600,
+      targetOdometerKm: 5000,
+    )!;
+
+    expect(progress.percentage, 73);
+    expect(progress.travelledKm, 1100);
+    expect(progress.intervalKm, 1500);
+    expect(progress.remainingKm, 400);
+  });
 }

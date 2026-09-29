@@ -115,6 +115,7 @@ abstract interface class ServiceReminderScheduler {
   Future<void> schedule({
     required int maintenanceRecordId,
     required DateTime targetDate,
+    required String title,
   });
 
   Future<void> cancel(int maintenanceRecordId);
@@ -147,6 +148,7 @@ class NoopServiceReminderScheduler implements ServiceReminderScheduler {
   Future<void> schedule({
     required int maintenanceRecordId,
     required DateTime targetDate,
+    required String title,
   }) async {}
 }
 
@@ -521,24 +523,31 @@ class MaintenanceRecordService {
     ])?.odometerKm;
     for (final reminder in reminders) {
       if (reminder.completedAt != null) continue;
+      final record = recordById[reminder.maintenanceRecordId];
+      if (record == null) continue;
       if (reminder.targetDate case final date?) {
         unawaited(
-          _scheduleDateNotification(reminder.maintenanceRecordId, date),
+          _scheduleDateNotification(
+            reminder.maintenanceRecordId,
+            date,
+            record.serviceTitle ?? 'Service reminder',
+          ),
         );
       }
       final target = reminder.targetOdometerKm;
-      final record = recordById[reminder.maintenanceRecordId];
-      if (target == null || record == null || currentOdometer == null) continue;
-      final distanceToTarget = target - record.odometerKm;
-      if (distanceToTarget <= 0) continue;
-      final progress =
-          ((currentOdometer - record.odometerKm) * 100 / distanceToTarget)
-              .floor();
-      final stage = progress >= 100
+      if (target == null || currentOdometer == null) continue;
+      final progress = _domain.evaluateMileageProgress(
+        serviceOdometerKm: record.odometerKm,
+        currentOdometerKm: currentOdometer,
+        targetOdometerKm: target,
+      );
+      if (progress == null) continue;
+      final percentage = progress.percentage;
+      final stage = percentage >= 100
           ? 100
-          : progress >= 90
+          : percentage >= 90
           ? 90
-          : progress >= 80
+          : percentage >= 80
           ? 80
           : 0;
       if (stage == 0 ||
@@ -576,11 +585,13 @@ class MaintenanceRecordService {
   Future<void> _scheduleDateNotification(
     int maintenanceRecordId,
     DateTime targetDate,
+    String title,
   ) async {
     try {
       await _scheduler.schedule(
         maintenanceRecordId: maintenanceRecordId,
         targetDate: targetDate,
+        title: title,
       );
     } catch (_) {
       // Notification availability must never roll back or block a record.

@@ -5,6 +5,7 @@ import 'package:pdfrx/pdfrx.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../application/maintenance/maintenance_record_service.dart';
+import '../../application/maintenance/service_calendar_launcher.dart';
 import '../../data/database/app_database.dart';
 import '../../data/database/schema.dart';
 import '../fuel/fuel_formatters.dart';
@@ -19,12 +20,14 @@ class MaintenanceDetailsScreen extends StatefulWidget {
     required this.service,
     required this.fileStore,
     this.readOnly = false,
+    this.calendarLauncher = const PlatformServiceCalendarLauncher(),
   });
 
   final int recordId;
   final MaintenanceRecordService service;
   final AttachmentFileStore fileStore;
   final bool readOnly;
+  final ServiceCalendarLauncher calendarLauncher;
 
   @override
   State<MaintenanceDetailsScreen> createState() =>
@@ -76,6 +79,12 @@ class _MaintenanceDetailsScreenState extends State<MaintenanceDetailsScreen> {
             fileStore: widget.fileStore,
             onEdit: widget.readOnly ? null : () => _edit(bundle),
             onDelete: widget.readOnly ? null : () => _delete(bundle),
+            onAddToCalendar:
+                !widget.readOnly &&
+                    bundle.reminder?.completedAt == null &&
+                    bundle.reminder?.targetDate != null
+                ? () => _addToCalendar(bundle)
+                : null,
           );
         },
       ),
@@ -125,6 +134,34 @@ class _MaintenanceDetailsScreenState extends State<MaintenanceDetailsScreen> {
     await widget.service.delete(bundle.record.id);
     if (mounted) Navigator.pop(context, true);
   }
+
+  Future<void> _addToCalendar(MaintenanceRecordBundle bundle) async {
+    final reminder = bundle.reminder;
+    final targetDate = reminder?.targetDate;
+    if (reminder == null || targetDate == null) return;
+    try {
+      await widget.calendarLauncher.addServiceReminder(
+        title: bundle.record.serviceTitle ?? 'Service reminder',
+        targetDate: targetDate,
+        targetOdometerKm: reminder.targetOdometerKm,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Calendar opened. Save the event to add this reminder.',
+            ),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open a calendar app.')),
+        );
+      }
+    }
+  }
 }
 
 class _DetailsBody extends StatelessWidget {
@@ -133,12 +170,14 @@ class _DetailsBody extends StatelessWidget {
     required this.fileStore,
     required this.onEdit,
     required this.onDelete,
+    required this.onAddToCalendar,
   });
 
   final MaintenanceRecordBundle bundle;
   final AttachmentFileStore fileStore;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final VoidCallback? onAddToCalendar;
 
   @override
   Widget build(BuildContext context) {
@@ -243,6 +282,14 @@ class _DetailsBody extends StatelessWidget {
                       formatMaintenanceDate(reminder.targetDate!.toLocal()),
                   ].join(' or '),
                 ),
+                trailing: onAddToCalendar == null
+                    ? null
+                    : IconButton(
+                        key: const Key('details-add-reminder-to-calendar'),
+                        tooltip: 'Add to calendar',
+                        onPressed: onAddToCalendar,
+                        icon: const Icon(Icons.calendar_month_outlined),
+                      ),
               ),
             ),
           ],

@@ -15,9 +15,11 @@ class DataManagementScreen extends StatefulWidget {
     super.key,
     required this.service,
     this.vehicleLifecycleBuilder,
+    this.onDataRestored,
   });
   final DataPortabilityService service;
   final WidgetBuilder? vehicleLifecycleBuilder;
+  final Future<void> Function()? onDataRestored;
 
   @override
   State<DataManagementScreen> createState() => _DataManagementScreenState();
@@ -29,14 +31,34 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Settings & data')),
-    body: ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-      children: [
-        const _InfoPanel(),
-        if (widget.vehicleLifecycleBuilder != null) ...[
+    body: SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        children: [
+          const _InfoPanel(),
+          if (widget.vehicleLifecycleBuilder != null) ...[
+            const SizedBox(height: 24),
+            const Text(
+              'VEHICLE',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 10),
+            _ActionTile(
+              key: const Key('open-vehicle-lifecycle'),
+              icon: Icons.directions_car_outlined,
+              title: 'Vehicle Lifecycle',
+              subtitle: 'Retire this vehicle or view past vehicles.',
+              enabled: _busy == null,
+              onTap: _openVehicleLifecycle,
+            ),
+          ],
           const SizedBox(height: 24),
           const Text(
-            'VEHICLE',
+            'EXPORT & BACKUP',
             style: TextStyle(
               color: AppColors.textSecondary,
               fontSize: 12,
@@ -45,85 +67,76 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
           ),
           const SizedBox(height: 10),
           _ActionTile(
-            key: const Key('open-vehicle-lifecycle'),
-            icon: Icons.directions_car_outlined,
-            title: 'Vehicle Lifecycle',
-            subtitle: 'Retire this vehicle or view past vehicles.',
+            key: const Key('export-records-excel'),
+            icon: Icons.table_view_outlined,
+            title: 'Export Records (Excel)',
+            subtitle: 'Four readable sheets. This file cannot restore the app.',
             enabled: _busy == null,
-            onTap: _openVehicleLifecycle,
+            onTap: () =>
+                _export('Excel export', widget.service.createExcelExport),
+          ),
+          _ActionTile(
+            key: const Key('export-maintenance-archive'),
+            icon: Icons.folder_zip_outlined,
+            title: 'Export Maintenance Archive',
+            subtitle: 'Readable workbook plus receipt files.',
+            enabled: _busy == null,
+            onTap: () => _export(
+              'Maintenance archive',
+              widget.service.createMaintenanceArchive,
+            ),
+          ),
+          _ActionTile(
+            key: const Key('create-full-backup'),
+            icon: Icons.backup_outlined,
+            title: 'Create Full Backup',
+            subtitle: 'Restorable structured data and all attachments.',
+            enabled: _busy == null,
+            onTap: () =>
+                _export('Full backup', widget.service.createFullBackup),
+          ),
+          const SizedBox(height: 18),
+          const Text(
+            'RESTORE',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _ActionTile(
+            key: const Key('restore-full-backup'),
+            icon: Icons.restore_outlined,
+            title: 'Restore Full Backup',
+            subtitle: 'Validates the ZIP before replacing local app data.',
+            enabled: _busy == null,
+            onTap: _restore,
           ),
         ],
-        const SizedBox(height: 24),
-        const Text(
-          'EXPORT & BACKUP',
-          style: TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 10),
-        _ActionTile(
-          key: const Key('export-records-excel'),
-          icon: Icons.table_view_outlined,
-          title: 'Export Records (Excel)',
-          subtitle: 'Four readable sheets. This file cannot restore the app.',
-          enabled: _busy == null,
-          onTap: () =>
-              _export('Excel export', widget.service.createExcelExport),
-        ),
-        _ActionTile(
-          key: const Key('export-maintenance-archive'),
-          icon: Icons.folder_zip_outlined,
-          title: 'Export Maintenance Archive',
-          subtitle: 'Readable workbook plus receipt files.',
-          enabled: _busy == null,
-          onTap: () => _export(
-            'Maintenance archive',
-            widget.service.createMaintenanceArchive,
-          ),
-        ),
-        _ActionTile(
-          key: const Key('create-full-backup'),
-          icon: Icons.backup_outlined,
-          title: 'Create Full Backup',
-          subtitle: 'Restorable structured data and all attachments.',
-          enabled: _busy == null,
-          onTap: () => _export('Full backup', widget.service.createFullBackup),
-        ),
-        const SizedBox(height: 18),
-        const Text(
-          'RESTORE',
-          style: TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 10),
-        _ActionTile(
-          key: const Key('restore-full-backup'),
-          icon: Icons.restore_outlined,
-          title: 'Restore Full Backup',
-          subtitle: 'Validates the ZIP before replacing local app data.',
-          enabled: _busy == null,
-          onTap: _restore,
-        ),
-        if (_busy != null) ...[
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              const SizedBox.square(
-                dimension: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              const SizedBox(width: 12),
-              Text(_busy!),
-            ],
-          ),
-        ],
-      ],
+      ),
     ),
+    bottomNavigationBar: _busy == null
+        ? null
+        : SafeArea(
+            minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: Card(
+              margin: EdgeInsets.zero,
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    const SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(_busy!)),
+                  ],
+                ),
+              ),
+            ),
+          ),
   );
 
   Future<void> _openVehicleLifecycle() async {
@@ -201,6 +214,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       final result = await widget.service.restoreFullBackup(
         Uint8List.fromList(bytes),
       );
+      await widget.onDataRestored?.call();
       if (mounted) {
         _message(
           'Restore complete: ${result.fuelEventCount} fuel events, '

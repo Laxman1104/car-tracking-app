@@ -62,6 +62,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Maintenance History'), findsOneWidget);
       expect(find.byKey(const Key('active-service-reminder')), findsOneWidget);
+      expect(
+        find.byKey(const Key('add-service-reminder-to-calendar')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('alerts at'), findsNothing);
+      expect(find.textContaining('service interval completed'), findsOneWidget);
       await tester.tap(find.text('General Service'));
       await tester.pumpAndSettle();
       expect(find.text('Record Details'), findsOneWidget);
