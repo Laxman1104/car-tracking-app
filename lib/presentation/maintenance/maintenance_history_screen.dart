@@ -467,11 +467,14 @@ class _RecordCard extends StatelessWidget {
                 children: [
                   _CategoryChip(category: record.category),
                   const SizedBox(width: 10),
-                  Text(
-                    formatMaintenanceDate(record.occurredAt.toLocal()),
-                    style: const TextStyle(color: AppColors.textSecondary),
+                  Expanded(
+                    child: Text(
+                      formatMaintenanceDate(record.occurredAt.toLocal()),
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: AppColors.textSecondary),
+                    ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 10),
                   Text(
                     formatRinggitFromSen(record.totalCostSen),
                     style: const TextStyle(

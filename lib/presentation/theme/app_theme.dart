@@ -29,6 +29,7 @@ abstract final class AppTheme {
     final base = ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
+      fontFamily: 'Roboto',
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.canvas,
     );
@@ -41,6 +42,7 @@ abstract final class AppTheme {
         elevation: 0,
         titleTextStyle: TextStyle(
           color: AppColors.textPrimary,
+          fontFamily: 'Roboto',
           fontSize: 24,
           fontWeight: FontWeight.w700,
         ),
