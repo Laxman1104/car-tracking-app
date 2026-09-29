@@ -215,31 +215,99 @@ void main() {
     },
   );
 
+  test('each dated Service reminder remains independently scheduled', () async {
+    final firstDate = DateTime.utc(2027, 9, 10);
+    final firstId = await service.create(
+      input(nextDate: firstDate, nextOdometer: 20000),
+    );
+    final secondDate = DateTime.utc(2028, 3, 10);
+    final secondId = await service.create(
+      input(
+        occurredAt: DateTime.utc(2027, 9, 10),
+        odometer: 20000,
+        nextDate: secondDate,
+        nextOdometer: 30000,
+      ),
+    );
+
+    expect(scheduler.scheduled.keys, {firstId, secondId});
+    expect(scheduler.scheduled[secondId]!.isAtSameMomentAs(secondDate), isTrue);
+    await service.delete(secondId);
+    expect(scheduler.scheduled.keys, {firstId});
+    expect(scheduler.scheduled[firstId]!.isAtSameMomentAs(firstDate), isTrue);
+  });
+
   test(
-    'only latest service notification is active and delete restores prior',
+    'fuel odometer updates notify once at 80, 90, and 100 percent',
     () async {
-      final firstDate = DateTime.utc(2027, 9, 10);
-      final firstId = await service.create(
-        input(nextDate: firstDate, nextOdometer: 20000),
-      );
-      final secondDate = DateTime.utc(2028, 3, 10);
-      final secondId = await service.create(
-        input(
-          occurredAt: DateTime.utc(2027, 9, 10),
-          odometer: 20000,
-          nextDate: secondDate,
-          nextOdometer: 30000,
-        ),
+      final recordId = await service.create(input(nextOdometer: 15200));
+      final createFuel = CreateFuelEvent(
+        fuelEvents: fuel,
+        maintenance: maintenance,
+        onOdometerUpdated: service.reconcileReminders,
       );
 
-      expect(scheduler.scheduled.keys, {secondId});
+      Future<void> log(int odometer, int day) async {
+        await createFuel(
+          FuelEventInput(
+            vehicleId: vehicleId,
+            occurredAt: DateTime.utc(2027, 3, day),
+            odometerKm: odometer,
+            fuelBrand: 'PETRONAS',
+            fuelVolumeMillilitres: 10000,
+            costSen: 2000,
+            isFullTank: true,
+          ),
+        );
+      }
+
+      await log(14208, 11);
+      expect(scheduler.mileageStages[recordId], 80);
+      await log(14704, 12);
+      expect(scheduler.mileageStages[recordId], 90);
+      await log(15200, 13);
+      expect(scheduler.mileageStages[recordId], 100);
       expect(
-        scheduler.scheduled[secondId]!.isAtSameMomentAs(secondDate),
-        isTrue,
+        (await reminders.findForRecord(recordId))!
+            .lastMileageNotificationPercent,
+        100,
       );
-      await service.delete(secondId);
-      expect(scheduler.scheduled.keys, {firstId});
-      expect(scheduler.scheduled[firstId]!.isAtSameMomentAs(firstDate), isTrue);
+    },
+  );
+
+  test(
+    'marking a reminder done keeps its record but removes it from active use',
+    () async {
+      final recordId = await service.create(input(nextOdometer: 15200));
+
+      await service.markReminderDone(recordId);
+
+      expect(await maintenance.findRecordById(recordId), isNotNull);
+      expect((await reminders.findForRecord(recordId))!.completedAt, isNotNull);
+      expect((await service.loadHistory(vehicleId)).activeReminder, isNull);
+      expect(scheduler.cancelled, contains(recordId));
+    },
+  );
+
+  test(
+    'notification failures do not undo a saved maintenance record',
+    () async {
+      final resilientService = MaintenanceRecordService(
+        database: database,
+        maintenance: maintenance,
+        fuelEvents: fuel,
+        attachments: attachments,
+        reminders: reminders,
+        fileStore: files,
+        scheduler: const _ThrowingScheduler(),
+      );
+
+      final recordId = await resilientService.create(
+        input(nextDate: DateTime.utc(2027, 9, 10), nextOdometer: 20000),
+      );
+
+      expect(await maintenance.findRecordById(recordId), isNotNull);
+      expect(await reminders.findForRecord(recordId), isNotNull);
     },
   );
 }
@@ -270,6 +338,7 @@ class _FakeFiles implements AttachmentFileStore {
 class _FakeScheduler implements ServiceReminderScheduler {
   final scheduled = <int, DateTime>{};
   final cancelled = <int>[];
+  final mileageStages = <int, int>{};
 
   @override
   Future<void> cancel(int maintenanceRecordId) async {
@@ -282,4 +351,36 @@ class _FakeScheduler implements ServiceReminderScheduler {
     required int maintenanceRecordId,
     required DateTime targetDate,
   }) async => scheduled[maintenanceRecordId] = targetDate;
+
+  @override
+  Future<void> showMileageProgress({
+    required int maintenanceRecordId,
+    required String title,
+    required int stagePercent,
+    required int currentOdometerKm,
+    required int targetOdometerKm,
+  }) async => mileageStages[maintenanceRecordId] = stagePercent;
+}
+
+class _ThrowingScheduler implements ServiceReminderScheduler {
+  const _ThrowingScheduler();
+
+  @override
+  Future<void> cancel(int maintenanceRecordId) =>
+      Future.error(StateError('Notifications unavailable'));
+
+  @override
+  Future<void> schedule({
+    required int maintenanceRecordId,
+    required DateTime targetDate,
+  }) => Future.error(StateError('Notifications unavailable'));
+
+  @override
+  Future<void> showMileageProgress({
+    required int maintenanceRecordId,
+    required String title,
+    required int stagePercent,
+    required int currentOdometerKm,
+    required int targetOdometerKm,
+  }) => Future.error(StateError('Notifications unavailable'));
 }

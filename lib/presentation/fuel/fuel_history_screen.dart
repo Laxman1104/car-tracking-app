@@ -27,16 +27,18 @@ class FuelHistoryScreen extends StatefulWidget {
     super.key,
     required this.vehicleId,
     required this.loadFuelHistory,
-    required this.fuelFormBuilder,
+    this.fuelFormBuilder,
     this.cycleDetailsBuilder,
     this.fuelEventDetailsBuilder,
+    this.readOnly = false,
   });
 
   final int vehicleId;
   final FuelHistoryLoader loadFuelHistory;
-  final FuelFormBuilder fuelFormBuilder;
+  final FuelFormBuilder? fuelFormBuilder;
   final CycleDetailsBuilder? cycleDetailsBuilder;
   final FuelEventDetailsBuilder? fuelEventDetailsBuilder;
+  final bool readOnly;
 
   @override
   State<FuelHistoryScreen> createState() => _FuelHistoryScreenState();
@@ -60,10 +62,12 @@ class _FuelHistoryScreenState extends State<FuelHistoryScreen> {
   }
 
   Future<void> _openFuelForm() async {
+    final builder = widget.fuelFormBuilder;
+    if (builder == null || widget.readOnly) return;
     var didSave = false;
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (context) => widget.fuelFormBuilder(context, () {
+        builder: (context) => builder(context, () {
           didSave = true;
           Navigator.of(context).pop();
         }),
@@ -76,14 +80,16 @@ class _FuelHistoryScreenState extends State<FuelHistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Fuel History')),
-      floatingActionButton: FloatingActionButton(
-        key: const Key('add-fuel-event-fab'),
-        onPressed: _openFuelForm,
-        tooltip: 'Add Fuel Event',
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textPrimary,
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: widget.readOnly
+          ? null
+          : FloatingActionButton(
+              key: const Key('add-fuel-event-fab'),
+              onPressed: _openFuelForm,
+              tooltip: 'Add Fuel Event',
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.textPrimary,
+              child: const Icon(Icons.add),
+            ),
       body: FutureBuilder<FuelCycleBuildResult>(
         future: _history,
         builder: (context, snapshot) {

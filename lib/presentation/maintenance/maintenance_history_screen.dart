@@ -14,11 +14,13 @@ class MaintenanceHistoryScreen extends StatefulWidget {
     required this.vehicleId,
     required this.service,
     required this.fileStore,
+    this.readOnly = false,
   });
 
   final int vehicleId;
   final MaintenanceRecordService service;
   final AttachmentFileStore fileStore;
+  final bool readOnly;
 
   @override
   State<MaintenanceHistoryScreen> createState() =>
@@ -37,7 +39,9 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
 
   Future<void> _reload() async {
     final future = widget.service.loadHistory(widget.vehicleId);
-    setState(() => _history = future);
+    setState(() {
+      _history = future;
+    });
     await future;
   }
 
@@ -61,24 +65,53 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
           recordId: bundle.record.id,
           service: widget.service,
           fileStore: widget.fileStore,
+          readOnly: widget.readOnly,
         ),
       ),
     );
     if (changed == true && mounted) await _reload();
   }
 
+  Future<void> _markReminderDone(int maintenanceRecordId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Mark reminder as done?'),
+        content: const Text(
+          'This removes it from active and upcoming reminders while keeping '
+          'the original service record in your history.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Mark as done'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await widget.service.markReminderDone(maintenanceRecordId);
+    if (mounted) await _reload();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Maintenance History')),
-      floatingActionButton: FloatingActionButton(
-        key: const Key('add-maintenance-record-fab'),
-        onPressed: _openForm,
-        tooltip: 'Add Maintenance Record',
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textPrimary,
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: widget.readOnly
+          ? null
+          : FloatingActionButton(
+              key: const Key('add-maintenance-record-fab'),
+              onPressed: _openForm,
+              tooltip: 'Add Maintenance Record',
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.textPrimary,
+              child: const Icon(Icons.add),
+            ),
       body: FutureBuilder<MaintenanceHistoryData>(
         future: _history,
         builder: (context, snapshot) {
@@ -107,7 +140,10 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
               children: [
-                _ReminderCard(data: data),
+                _ReminderCard(
+                  data: data,
+                  onMarkDone: widget.readOnly ? null : _markReminderDone,
+                ),
                 const SizedBox(height: 20),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -158,8 +194,9 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
 }
 
 class _ReminderCard extends StatelessWidget {
-  const _ReminderCard({required this.data});
+  const _ReminderCard({required this.data, required this.onMarkDone});
   final MaintenanceHistoryData data;
+  final Future<void> Function(int maintenanceRecordId)? onMarkDone;
 
   @override
   Widget build(BuildContext context) {
@@ -214,6 +251,20 @@ class _ReminderCard extends StatelessWidget {
       now: DateTime.now().toUtc(),
       currentOdometerKm: data.currentOdometerKm ?? 0,
     );
+    final sourceRecord = data.records
+        .where((bundle) => bundle.record.id == reminder.maintenanceRecordId)
+        .firstOrNull;
+    final sourceOdometer = sourceRecord?.record.odometerKm;
+    final targetOdometer = reminder.targetOdometerKm;
+    double? mileageProgress;
+    if (sourceOdometer != null &&
+        targetOdometer != null &&
+        targetOdometer > sourceOdometer) {
+      mileageProgress =
+          ((data.currentOdometerKm ?? sourceOdometer) - sourceOdometer) /
+          (targetOdometer - sourceOdometer);
+      mileageProgress = mileageProgress.clamp(0, 1);
+    }
     final parts = <String>[
       if (reminder.targetOdometerKm != null) '${reminder.targetOdometerKm} km',
       if (reminder.targetDate != null)
@@ -235,10 +286,11 @@ class _ReminderCard extends StatelessWidget {
                   color: AppColors.teal,
                 ),
                 const SizedBox(width: 8),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'NEXT WHOLE-SERVICE REMINDER',
-                    style: TextStyle(
+                    (data.activeReminderTitle ?? 'Next whole service')
+                        .toUpperCase(),
+                    style: const TextStyle(
                       color: AppColors.teal,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -268,6 +320,34 @@ class _ReminderCard extends StatelessWidget {
                 style: TextStyle(color: AppColors.textSecondary),
               ),
             ],
+            if (mileageProgress != null) ...[
+              const SizedBox(height: 14),
+              LinearProgressIndicator(
+                value: mileageProgress,
+                minHeight: 6,
+                borderRadius: BorderRadius.circular(99),
+              ),
+              const SizedBox(height: 7),
+              Text(
+                '${(mileageProgress * 100).floor()}% toward mileage target · '
+                'alerts at 80%, 90%, and 100%',
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+            const SizedBox(height: 10),
+            if (onMarkDone != null)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  key: const Key('mark-service-reminder-done'),
+                  onPressed: () => onMarkDone!(reminder.maintenanceRecordId),
+                  icon: const Icon(Icons.check_circle_outline),
+                  label: const Text('Mark as done'),
+                ),
+              ),
           ],
         ),
       ),
@@ -303,9 +383,11 @@ class _RecordCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final record = bundle.record;
-    final title = bundle.items.isEmpty
-        ? '${maintenanceCategoryLabel(record.category)} record'
-        : bundle.items.first.name;
+    final title =
+        record.serviceTitle ??
+        (bundle.items.isEmpty
+            ? '${maintenanceCategoryLabel(record.category)} record'
+            : bundle.items.first.name);
     final itemSummary = bundle.items
         .map((item) => item.name)
         .take(3)

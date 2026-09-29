@@ -18,11 +18,13 @@ class MaintenanceDetailsScreen extends StatefulWidget {
     required this.recordId,
     required this.service,
     required this.fileStore,
+    this.readOnly = false,
   });
 
   final int recordId;
   final MaintenanceRecordService service;
   final AttachmentFileStore fileStore;
+  final bool readOnly;
 
   @override
   State<MaintenanceDetailsScreen> createState() =>
@@ -41,7 +43,9 @@ class _MaintenanceDetailsScreenState extends State<MaintenanceDetailsScreen> {
 
   Future<void> _reload() async {
     final future = widget.service.loadRecord(widget.recordId);
-    setState(() => _record = future);
+    setState(() {
+      _record = future;
+    });
     await future;
   }
 
@@ -70,8 +74,8 @@ class _MaintenanceDetailsScreenState extends State<MaintenanceDetailsScreen> {
           return _DetailsBody(
             bundle: bundle,
             fileStore: widget.fileStore,
-            onEdit: () => _edit(bundle),
-            onDelete: () => _delete(bundle),
+            onEdit: widget.readOnly ? null : () => _edit(bundle),
+            onDelete: widget.readOnly ? null : () => _delete(bundle),
           );
         },
       ),
@@ -133,8 +137,8 @@ class _DetailsBody extends StatelessWidget {
 
   final MaintenanceRecordBundle bundle;
   final AttachmentFileStore fileStore;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -143,11 +147,12 @@ class _DetailsBody extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Record Details'),
         actions: [
-          IconButton(
-            key: const Key('edit-maintenance-record'),
-            onPressed: onEdit,
-            icon: const Icon(Icons.edit_outlined),
-          ),
+          if (onEdit != null)
+            IconButton(
+              key: const Key('edit-maintenance-record'),
+              onPressed: onEdit,
+              icon: const Icon(Icons.edit_outlined),
+            ),
         ],
       ),
       body: ListView(
@@ -169,9 +174,10 @@ class _DetailsBody extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    bundle.items.isEmpty
-                        ? 'Maintenance Record'
-                        : bundle.items.first.name,
+                    record.serviceTitle ??
+                        (bundle.items.isEmpty
+                            ? 'Maintenance Record'
+                            : bundle.items.first.name),
                     style: const TextStyle(
                       fontSize: 23,
                       fontWeight: FontWeight.w700,
@@ -226,7 +232,9 @@ class _DetailsBody extends StatelessWidget {
                   Icons.notifications_active_outlined,
                   color: AppColors.teal,
                 ),
-                title: const Text('NEXT WHOLE-SERVICE REMINDER'),
+                title: Text(
+                  (record.serviceTitle ?? 'Next whole service').toUpperCase(),
+                ),
                 subtitle: Text(
                   [
                     if (reminder.targetOdometerKm != null)
@@ -293,41 +301,42 @@ class _DetailsBody extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 36),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF28171C),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'CAUTION',
-                  style: TextStyle(
-                    color: AppColors.error,
-                    fontWeight: FontWeight.w700,
+          if (onDelete != null)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF28171C),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'CAUTION',
+                    style: TextStyle(
+                      color: AppColors.error,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Delete only if this event should not exist. Its attachments '
-                  'will also be removed.',
-                  style: TextStyle(color: AppColors.textSecondary),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    key: const Key('delete-maintenance-record'),
-                    onPressed: onDelete,
-                    icon: const Icon(Icons.delete_outline),
-                    label: const Text('Delete Record'),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Delete only if this event should not exist. Its attachments '
+                    'will also be removed.',
+                    style: TextStyle(color: AppColors.textSecondary),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      key: const Key('delete-maintenance-record'),
+                      onPressed: onDelete,
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('Delete Record'),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );

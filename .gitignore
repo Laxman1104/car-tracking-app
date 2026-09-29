@@ -33,6 +33,26 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+/distribution/
+/assets/design_reference/
+
+# Private runtime data and generated user exports
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.xlsx
+*.zip
+**/receipts/
+**/exports/
+**/backups/
+
+# Android signing secrets
+*.jks
+*.keystore
+key.properties
 
 # Symbolication related
 app.*.symbols

@@ -75,6 +75,28 @@ class $VehiclesTable extends Vehicles with TableInfo<$VehiclesTable, Vehicle> {
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _startingOdometerKmMeta =
+      const VerificationMeta('startingOdometerKm');
+  @override
+  late final GeneratedColumn<int> startingOdometerKm = GeneratedColumn<int>(
+    'starting_odometer_km',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _photoPathMeta = const VerificationMeta(
+    'photoPath',
+  );
+  @override
+  late final GeneratedColumn<String> photoPath = GeneratedColumn<String>(
+    'photo_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isActiveMeta = const VerificationMeta(
     'isActive',
   );
@@ -108,6 +130,8 @@ class $VehiclesTable extends Vehicles with TableInfo<$VehiclesTable, Vehicle> {
     id,
     displayName,
     registrationNumber,
+    startingOdometerKm,
+    photoPath,
     isActive,
     retiredAt,
   ];
@@ -158,6 +182,21 @@ class $VehiclesTable extends Vehicles with TableInfo<$VehiclesTable, Vehicle> {
         ),
       );
     }
+    if (data.containsKey('starting_odometer_km')) {
+      context.handle(
+        _startingOdometerKmMeta,
+        startingOdometerKm.isAcceptableOrUnknown(
+          data['starting_odometer_km']!,
+          _startingOdometerKmMeta,
+        ),
+      );
+    }
+    if (data.containsKey('photo_path')) {
+      context.handle(
+        _photoPathMeta,
+        photoPath.isAcceptableOrUnknown(data['photo_path']!, _photoPathMeta),
+      );
+    }
     if (data.containsKey('is_active')) {
       context.handle(
         _isActiveMeta,
@@ -199,6 +238,14 @@ class $VehiclesTable extends Vehicles with TableInfo<$VehiclesTable, Vehicle> {
         DriftSqlType.string,
         data['${effectivePrefix}registration_number'],
       ),
+      startingOdometerKm: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}starting_odometer_km'],
+      )!,
+      photoPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}photo_path'],
+      ),
       isActive: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_active'],
@@ -222,6 +269,8 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
   final int id;
   final String displayName;
   final String? registrationNumber;
+  final int startingOdometerKm;
+  final String? photoPath;
   final bool isActive;
   final DateTime? retiredAt;
   const Vehicle({
@@ -230,6 +279,8 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
     required this.id,
     required this.displayName,
     this.registrationNumber,
+    required this.startingOdometerKm,
+    this.photoPath,
     required this.isActive,
     this.retiredAt,
   });
@@ -242,6 +293,10 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
     map['display_name'] = Variable<String>(displayName);
     if (!nullToAbsent || registrationNumber != null) {
       map['registration_number'] = Variable<String>(registrationNumber);
+    }
+    map['starting_odometer_km'] = Variable<int>(startingOdometerKm);
+    if (!nullToAbsent || photoPath != null) {
+      map['photo_path'] = Variable<String>(photoPath);
     }
     map['is_active'] = Variable<bool>(isActive);
     if (!nullToAbsent || retiredAt != null) {
@@ -259,6 +314,10 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
       registrationNumber: registrationNumber == null && nullToAbsent
           ? const Value.absent()
           : Value(registrationNumber),
+      startingOdometerKm: Value(startingOdometerKm),
+      photoPath: photoPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(photoPath),
       isActive: Value(isActive),
       retiredAt: retiredAt == null && nullToAbsent
           ? const Value.absent()
@@ -279,6 +338,8 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
       registrationNumber: serializer.fromJson<String?>(
         json['registrationNumber'],
       ),
+      startingOdometerKm: serializer.fromJson<int>(json['startingOdometerKm']),
+      photoPath: serializer.fromJson<String?>(json['photoPath']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       retiredAt: serializer.fromJson<DateTime?>(json['retiredAt']),
     );
@@ -292,6 +353,8 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
       'id': serializer.toJson<int>(id),
       'displayName': serializer.toJson<String>(displayName),
       'registrationNumber': serializer.toJson<String?>(registrationNumber),
+      'startingOdometerKm': serializer.toJson<int>(startingOdometerKm),
+      'photoPath': serializer.toJson<String?>(photoPath),
       'isActive': serializer.toJson<bool>(isActive),
       'retiredAt': serializer.toJson<DateTime?>(retiredAt),
     };
@@ -303,6 +366,8 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
     int? id,
     String? displayName,
     Value<String?> registrationNumber = const Value.absent(),
+    int? startingOdometerKm,
+    Value<String?> photoPath = const Value.absent(),
     bool? isActive,
     Value<DateTime?> retiredAt = const Value.absent(),
   }) => Vehicle(
@@ -313,6 +378,8 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
     registrationNumber: registrationNumber.present
         ? registrationNumber.value
         : this.registrationNumber,
+    startingOdometerKm: startingOdometerKm ?? this.startingOdometerKm,
+    photoPath: photoPath.present ? photoPath.value : this.photoPath,
     isActive: isActive ?? this.isActive,
     retiredAt: retiredAt.present ? retiredAt.value : this.retiredAt,
   );
@@ -327,6 +394,10 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
       registrationNumber: data.registrationNumber.present
           ? data.registrationNumber.value
           : this.registrationNumber,
+      startingOdometerKm: data.startingOdometerKm.present
+          ? data.startingOdometerKm.value
+          : this.startingOdometerKm,
+      photoPath: data.photoPath.present ? data.photoPath.value : this.photoPath,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       retiredAt: data.retiredAt.present ? data.retiredAt.value : this.retiredAt,
     );
@@ -340,6 +411,8 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
           ..write('id: $id, ')
           ..write('displayName: $displayName, ')
           ..write('registrationNumber: $registrationNumber, ')
+          ..write('startingOdometerKm: $startingOdometerKm, ')
+          ..write('photoPath: $photoPath, ')
           ..write('isActive: $isActive, ')
           ..write('retiredAt: $retiredAt')
           ..write(')'))
@@ -353,6 +426,8 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
     id,
     displayName,
     registrationNumber,
+    startingOdometerKm,
+    photoPath,
     isActive,
     retiredAt,
   );
@@ -365,6 +440,8 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
           other.id == this.id &&
           other.displayName == this.displayName &&
           other.registrationNumber == this.registrationNumber &&
+          other.startingOdometerKm == this.startingOdometerKm &&
+          other.photoPath == this.photoPath &&
           other.isActive == this.isActive &&
           other.retiredAt == this.retiredAt);
 }
@@ -375,6 +452,8 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
   final Value<int> id;
   final Value<String> displayName;
   final Value<String?> registrationNumber;
+  final Value<int> startingOdometerKm;
+  final Value<String?> photoPath;
   final Value<bool> isActive;
   final Value<DateTime?> retiredAt;
   const VehiclesCompanion({
@@ -383,6 +462,8 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
     this.id = const Value.absent(),
     this.displayName = const Value.absent(),
     this.registrationNumber = const Value.absent(),
+    this.startingOdometerKm = const Value.absent(),
+    this.photoPath = const Value.absent(),
     this.isActive = const Value.absent(),
     this.retiredAt = const Value.absent(),
   });
@@ -392,6 +473,8 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
     this.id = const Value.absent(),
     required String displayName,
     this.registrationNumber = const Value.absent(),
+    this.startingOdometerKm = const Value.absent(),
+    this.photoPath = const Value.absent(),
     this.isActive = const Value.absent(),
     this.retiredAt = const Value.absent(),
   }) : displayName = Value(displayName);
@@ -401,6 +484,8 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
     Expression<int>? id,
     Expression<String>? displayName,
     Expression<String>? registrationNumber,
+    Expression<int>? startingOdometerKm,
+    Expression<String>? photoPath,
     Expression<bool>? isActive,
     Expression<DateTime>? retiredAt,
   }) {
@@ -410,6 +495,9 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
       if (id != null) 'id': id,
       if (displayName != null) 'display_name': displayName,
       if (registrationNumber != null) 'registration_number': registrationNumber,
+      if (startingOdometerKm != null)
+        'starting_odometer_km': startingOdometerKm,
+      if (photoPath != null) 'photo_path': photoPath,
       if (isActive != null) 'is_active': isActive,
       if (retiredAt != null) 'retired_at': retiredAt,
     });
@@ -421,6 +509,8 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
     Value<int>? id,
     Value<String>? displayName,
     Value<String?>? registrationNumber,
+    Value<int>? startingOdometerKm,
+    Value<String?>? photoPath,
     Value<bool>? isActive,
     Value<DateTime?>? retiredAt,
   }) {
@@ -430,6 +520,8 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
       id: id ?? this.id,
       displayName: displayName ?? this.displayName,
       registrationNumber: registrationNumber ?? this.registrationNumber,
+      startingOdometerKm: startingOdometerKm ?? this.startingOdometerKm,
+      photoPath: photoPath ?? this.photoPath,
       isActive: isActive ?? this.isActive,
       retiredAt: retiredAt ?? this.retiredAt,
     );
@@ -453,6 +545,12 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
     if (registrationNumber.present) {
       map['registration_number'] = Variable<String>(registrationNumber.value);
     }
+    if (startingOdometerKm.present) {
+      map['starting_odometer_km'] = Variable<int>(startingOdometerKm.value);
+    }
+    if (photoPath.present) {
+      map['photo_path'] = Variable<String>(photoPath.value);
+    }
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
@@ -470,6 +568,8 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
           ..write('id: $id, ')
           ..write('displayName: $displayName, ')
           ..write('registrationNumber: $registrationNumber, ')
+          ..write('startingOdometerKm: $startingOdometerKm, ')
+          ..write('photoPath: $photoPath, ')
           ..write('isActive: $isActive, ')
           ..write('retiredAt: $retiredAt')
           ..write(')'))
@@ -1268,6 +1368,21 @@ class $MaintenanceRecordsTable extends MaintenanceRecords
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _serviceTitleMeta = const VerificationMeta(
+    'serviceTitle',
+  );
+  @override
+  late final GeneratedColumn<String> serviceTitle = GeneratedColumn<String>(
+    'service_title',
+    aliasedName,
+    true,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 120,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _totalCostSenMeta = const VerificationMeta(
     'totalCostSen',
   );
@@ -1298,6 +1413,7 @@ class $MaintenanceRecordsTable extends MaintenanceRecords
     odometerKm,
     category,
     workshop,
+    serviceTitle,
     totalCostSen,
     notes,
   ];
@@ -1356,6 +1472,15 @@ class $MaintenanceRecordsTable extends MaintenanceRecords
       context.handle(
         _workshopMeta,
         workshop.isAcceptableOrUnknown(data['workshop']!, _workshopMeta),
+      );
+    }
+    if (data.containsKey('service_title')) {
+      context.handle(
+        _serviceTitleMeta,
+        serviceTitle.isAcceptableOrUnknown(
+          data['service_title']!,
+          _serviceTitleMeta,
+        ),
       );
     }
     if (data.containsKey('total_cost_sen')) {
@@ -1422,6 +1547,10 @@ class $MaintenanceRecordsTable extends MaintenanceRecords
         DriftSqlType.string,
         data['${effectivePrefix}workshop'],
       ),
+      serviceTitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}service_title'],
+      ),
       totalCostSen: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}total_cost_sen'],
@@ -1454,6 +1583,9 @@ class MaintenanceRecord extends DataClass
   final int odometerKm;
   final MaintenanceCategory category;
   final String? workshop;
+
+  /// Optional user-facing title for Service visits and their reminders.
+  final String? serviceTitle;
   final int totalCostSen;
   final String? notes;
   const MaintenanceRecord({
@@ -1465,6 +1597,7 @@ class MaintenanceRecord extends DataClass
     required this.odometerKm,
     required this.category,
     this.workshop,
+    this.serviceTitle,
     required this.totalCostSen,
     this.notes,
   });
@@ -1485,6 +1618,9 @@ class MaintenanceRecord extends DataClass
     if (!nullToAbsent || workshop != null) {
       map['workshop'] = Variable<String>(workshop);
     }
+    if (!nullToAbsent || serviceTitle != null) {
+      map['service_title'] = Variable<String>(serviceTitle);
+    }
     map['total_cost_sen'] = Variable<int>(totalCostSen);
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
@@ -1504,6 +1640,9 @@ class MaintenanceRecord extends DataClass
       workshop: workshop == null && nullToAbsent
           ? const Value.absent()
           : Value(workshop),
+      serviceTitle: serviceTitle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serviceTitle),
       totalCostSen: Value(totalCostSen),
       notes: notes == null && nullToAbsent
           ? const Value.absent()
@@ -1527,6 +1666,7 @@ class MaintenanceRecord extends DataClass
         serializer.fromJson<String>(json['category']),
       ),
       workshop: serializer.fromJson<String?>(json['workshop']),
+      serviceTitle: serializer.fromJson<String?>(json['serviceTitle']),
       totalCostSen: serializer.fromJson<int>(json['totalCostSen']),
       notes: serializer.fromJson<String?>(json['notes']),
     );
@@ -1545,6 +1685,7 @@ class MaintenanceRecord extends DataClass
         $MaintenanceRecordsTable.$convertercategory.toJson(category),
       ),
       'workshop': serializer.toJson<String?>(workshop),
+      'serviceTitle': serializer.toJson<String?>(serviceTitle),
       'totalCostSen': serializer.toJson<int>(totalCostSen),
       'notes': serializer.toJson<String?>(notes),
     };
@@ -1559,6 +1700,7 @@ class MaintenanceRecord extends DataClass
     int? odometerKm,
     MaintenanceCategory? category,
     Value<String?> workshop = const Value.absent(),
+    Value<String?> serviceTitle = const Value.absent(),
     int? totalCostSen,
     Value<String?> notes = const Value.absent(),
   }) => MaintenanceRecord(
@@ -1570,6 +1712,7 @@ class MaintenanceRecord extends DataClass
     odometerKm: odometerKm ?? this.odometerKm,
     category: category ?? this.category,
     workshop: workshop.present ? workshop.value : this.workshop,
+    serviceTitle: serviceTitle.present ? serviceTitle.value : this.serviceTitle,
     totalCostSen: totalCostSen ?? this.totalCostSen,
     notes: notes.present ? notes.value : this.notes,
   );
@@ -1587,6 +1730,9 @@ class MaintenanceRecord extends DataClass
           : this.odometerKm,
       category: data.category.present ? data.category.value : this.category,
       workshop: data.workshop.present ? data.workshop.value : this.workshop,
+      serviceTitle: data.serviceTitle.present
+          ? data.serviceTitle.value
+          : this.serviceTitle,
       totalCostSen: data.totalCostSen.present
           ? data.totalCostSen.value
           : this.totalCostSen,
@@ -1605,6 +1751,7 @@ class MaintenanceRecord extends DataClass
           ..write('odometerKm: $odometerKm, ')
           ..write('category: $category, ')
           ..write('workshop: $workshop, ')
+          ..write('serviceTitle: $serviceTitle, ')
           ..write('totalCostSen: $totalCostSen, ')
           ..write('notes: $notes')
           ..write(')'))
@@ -1621,6 +1768,7 @@ class MaintenanceRecord extends DataClass
     odometerKm,
     category,
     workshop,
+    serviceTitle,
     totalCostSen,
     notes,
   );
@@ -1636,6 +1784,7 @@ class MaintenanceRecord extends DataClass
           other.odometerKm == this.odometerKm &&
           other.category == this.category &&
           other.workshop == this.workshop &&
+          other.serviceTitle == this.serviceTitle &&
           other.totalCostSen == this.totalCostSen &&
           other.notes == this.notes);
 }
@@ -1649,6 +1798,7 @@ class MaintenanceRecordsCompanion extends UpdateCompanion<MaintenanceRecord> {
   final Value<int> odometerKm;
   final Value<MaintenanceCategory> category;
   final Value<String?> workshop;
+  final Value<String?> serviceTitle;
   final Value<int> totalCostSen;
   final Value<String?> notes;
   const MaintenanceRecordsCompanion({
@@ -1660,6 +1810,7 @@ class MaintenanceRecordsCompanion extends UpdateCompanion<MaintenanceRecord> {
     this.odometerKm = const Value.absent(),
     this.category = const Value.absent(),
     this.workshop = const Value.absent(),
+    this.serviceTitle = const Value.absent(),
     this.totalCostSen = const Value.absent(),
     this.notes = const Value.absent(),
   });
@@ -1672,6 +1823,7 @@ class MaintenanceRecordsCompanion extends UpdateCompanion<MaintenanceRecord> {
     required int odometerKm,
     required MaintenanceCategory category,
     this.workshop = const Value.absent(),
+    this.serviceTitle = const Value.absent(),
     required int totalCostSen,
     this.notes = const Value.absent(),
   }) : vehicleId = Value(vehicleId),
@@ -1688,6 +1840,7 @@ class MaintenanceRecordsCompanion extends UpdateCompanion<MaintenanceRecord> {
     Expression<int>? odometerKm,
     Expression<String>? category,
     Expression<String>? workshop,
+    Expression<String>? serviceTitle,
     Expression<int>? totalCostSen,
     Expression<String>? notes,
   }) {
@@ -1700,6 +1853,7 @@ class MaintenanceRecordsCompanion extends UpdateCompanion<MaintenanceRecord> {
       if (odometerKm != null) 'odometer_km': odometerKm,
       if (category != null) 'category': category,
       if (workshop != null) 'workshop': workshop,
+      if (serviceTitle != null) 'service_title': serviceTitle,
       if (totalCostSen != null) 'total_cost_sen': totalCostSen,
       if (notes != null) 'notes': notes,
     });
@@ -1714,6 +1868,7 @@ class MaintenanceRecordsCompanion extends UpdateCompanion<MaintenanceRecord> {
     Value<int>? odometerKm,
     Value<MaintenanceCategory>? category,
     Value<String?>? workshop,
+    Value<String?>? serviceTitle,
     Value<int>? totalCostSen,
     Value<String?>? notes,
   }) {
@@ -1726,6 +1881,7 @@ class MaintenanceRecordsCompanion extends UpdateCompanion<MaintenanceRecord> {
       odometerKm: odometerKm ?? this.odometerKm,
       category: category ?? this.category,
       workshop: workshop ?? this.workshop,
+      serviceTitle: serviceTitle ?? this.serviceTitle,
       totalCostSen: totalCostSen ?? this.totalCostSen,
       notes: notes ?? this.notes,
     );
@@ -1760,6 +1916,9 @@ class MaintenanceRecordsCompanion extends UpdateCompanion<MaintenanceRecord> {
     if (workshop.present) {
       map['workshop'] = Variable<String>(workshop.value);
     }
+    if (serviceTitle.present) {
+      map['service_title'] = Variable<String>(serviceTitle.value);
+    }
     if (totalCostSen.present) {
       map['total_cost_sen'] = Variable<int>(totalCostSen.value);
     }
@@ -1780,6 +1939,7 @@ class MaintenanceRecordsCompanion extends UpdateCompanion<MaintenanceRecord> {
           ..write('odometerKm: $odometerKm, ')
           ..write('category: $category, ')
           ..write('workshop: $workshop, ')
+          ..write('serviceTitle: $serviceTitle, ')
           ..write('totalCostSen: $totalCostSen, ')
           ..write('notes: $notes')
           ..write(')'))
@@ -3103,6 +3263,28 @@ class $ServiceRemindersTable extends ServiceReminders
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _completedAtMeta = const VerificationMeta(
+    'completedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> completedAt = GeneratedColumn<DateTime>(
+    'completed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastMileageNotificationPercentMeta =
+      const VerificationMeta('lastMileageNotificationPercent');
+  @override
+  late final GeneratedColumn<int> lastMileageNotificationPercent =
+      GeneratedColumn<int>(
+        'last_mileage_notification_percent',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     createdAt,
@@ -3112,6 +3294,8 @@ class $ServiceRemindersTable extends ServiceReminders
     maintenanceRecordId,
     targetDate,
     targetOdometerKm,
+    completedAt,
+    lastMileageNotificationPercent,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3174,6 +3358,24 @@ class $ServiceRemindersTable extends ServiceReminders
         ),
       );
     }
+    if (data.containsKey('completed_at')) {
+      context.handle(
+        _completedAtMeta,
+        completedAt.isAcceptableOrUnknown(
+          data['completed_at']!,
+          _completedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_mileage_notification_percent')) {
+      context.handle(
+        _lastMileageNotificationPercentMeta,
+        lastMileageNotificationPercent.isAcceptableOrUnknown(
+          data['last_mileage_notification_percent']!,
+          _lastMileageNotificationPercentMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -3215,6 +3417,14 @@ class $ServiceRemindersTable extends ServiceReminders
         DriftSqlType.int,
         data['${effectivePrefix}target_odometer_km'],
       ),
+      completedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}completed_at'],
+      ),
+      lastMileageNotificationPercent: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_mileage_notification_percent'],
+      ),
     );
   }
 
@@ -3232,6 +3442,8 @@ class ServiceReminder extends DataClass implements Insertable<ServiceReminder> {
   final int maintenanceRecordId;
   final DateTime? targetDate;
   final int? targetOdometerKm;
+  final DateTime? completedAt;
+  final int? lastMileageNotificationPercent;
   const ServiceReminder({
     required this.createdAt,
     required this.updatedAt,
@@ -3240,6 +3452,8 @@ class ServiceReminder extends DataClass implements Insertable<ServiceReminder> {
     required this.maintenanceRecordId,
     this.targetDate,
     this.targetOdometerKm,
+    this.completedAt,
+    this.lastMileageNotificationPercent,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3254,6 +3468,14 @@ class ServiceReminder extends DataClass implements Insertable<ServiceReminder> {
     }
     if (!nullToAbsent || targetOdometerKm != null) {
       map['target_odometer_km'] = Variable<int>(targetOdometerKm);
+    }
+    if (!nullToAbsent || completedAt != null) {
+      map['completed_at'] = Variable<DateTime>(completedAt);
+    }
+    if (!nullToAbsent || lastMileageNotificationPercent != null) {
+      map['last_mileage_notification_percent'] = Variable<int>(
+        lastMileageNotificationPercent,
+      );
     }
     return map;
   }
@@ -3271,6 +3493,13 @@ class ServiceReminder extends DataClass implements Insertable<ServiceReminder> {
       targetOdometerKm: targetOdometerKm == null && nullToAbsent
           ? const Value.absent()
           : Value(targetOdometerKm),
+      completedAt: completedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(completedAt),
+      lastMileageNotificationPercent:
+          lastMileageNotificationPercent == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastMileageNotificationPercent),
     );
   }
 
@@ -3289,6 +3518,10 @@ class ServiceReminder extends DataClass implements Insertable<ServiceReminder> {
       ),
       targetDate: serializer.fromJson<DateTime?>(json['targetDate']),
       targetOdometerKm: serializer.fromJson<int?>(json['targetOdometerKm']),
+      completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
+      lastMileageNotificationPercent: serializer.fromJson<int?>(
+        json['lastMileageNotificationPercent'],
+      ),
     );
   }
   @override
@@ -3302,6 +3535,10 @@ class ServiceReminder extends DataClass implements Insertable<ServiceReminder> {
       'maintenanceRecordId': serializer.toJson<int>(maintenanceRecordId),
       'targetDate': serializer.toJson<DateTime?>(targetDate),
       'targetOdometerKm': serializer.toJson<int?>(targetOdometerKm),
+      'completedAt': serializer.toJson<DateTime?>(completedAt),
+      'lastMileageNotificationPercent': serializer.toJson<int?>(
+        lastMileageNotificationPercent,
+      ),
     };
   }
 
@@ -3313,6 +3550,8 @@ class ServiceReminder extends DataClass implements Insertable<ServiceReminder> {
     int? maintenanceRecordId,
     Value<DateTime?> targetDate = const Value.absent(),
     Value<int?> targetOdometerKm = const Value.absent(),
+    Value<DateTime?> completedAt = const Value.absent(),
+    Value<int?> lastMileageNotificationPercent = const Value.absent(),
   }) => ServiceReminder(
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -3323,6 +3562,10 @@ class ServiceReminder extends DataClass implements Insertable<ServiceReminder> {
     targetOdometerKm: targetOdometerKm.present
         ? targetOdometerKm.value
         : this.targetOdometerKm,
+    completedAt: completedAt.present ? completedAt.value : this.completedAt,
+    lastMileageNotificationPercent: lastMileageNotificationPercent.present
+        ? lastMileageNotificationPercent.value
+        : this.lastMileageNotificationPercent,
   );
   ServiceReminder copyWithCompanion(ServiceRemindersCompanion data) {
     return ServiceReminder(
@@ -3339,6 +3582,13 @@ class ServiceReminder extends DataClass implements Insertable<ServiceReminder> {
       targetOdometerKm: data.targetOdometerKm.present
           ? data.targetOdometerKm.value
           : this.targetOdometerKm,
+      completedAt: data.completedAt.present
+          ? data.completedAt.value
+          : this.completedAt,
+      lastMileageNotificationPercent:
+          data.lastMileageNotificationPercent.present
+          ? data.lastMileageNotificationPercent.value
+          : this.lastMileageNotificationPercent,
     );
   }
 
@@ -3351,7 +3601,11 @@ class ServiceReminder extends DataClass implements Insertable<ServiceReminder> {
           ..write('vehicleId: $vehicleId, ')
           ..write('maintenanceRecordId: $maintenanceRecordId, ')
           ..write('targetDate: $targetDate, ')
-          ..write('targetOdometerKm: $targetOdometerKm')
+          ..write('targetOdometerKm: $targetOdometerKm, ')
+          ..write('completedAt: $completedAt, ')
+          ..write(
+            'lastMileageNotificationPercent: $lastMileageNotificationPercent',
+          )
           ..write(')'))
         .toString();
   }
@@ -3365,6 +3619,8 @@ class ServiceReminder extends DataClass implements Insertable<ServiceReminder> {
     maintenanceRecordId,
     targetDate,
     targetOdometerKm,
+    completedAt,
+    lastMileageNotificationPercent,
   );
   @override
   bool operator ==(Object other) =>
@@ -3376,7 +3632,10 @@ class ServiceReminder extends DataClass implements Insertable<ServiceReminder> {
           other.vehicleId == this.vehicleId &&
           other.maintenanceRecordId == this.maintenanceRecordId &&
           other.targetDate == this.targetDate &&
-          other.targetOdometerKm == this.targetOdometerKm);
+          other.targetOdometerKm == this.targetOdometerKm &&
+          other.completedAt == this.completedAt &&
+          other.lastMileageNotificationPercent ==
+              this.lastMileageNotificationPercent);
 }
 
 class ServiceRemindersCompanion extends UpdateCompanion<ServiceReminder> {
@@ -3387,6 +3646,8 @@ class ServiceRemindersCompanion extends UpdateCompanion<ServiceReminder> {
   final Value<int> maintenanceRecordId;
   final Value<DateTime?> targetDate;
   final Value<int?> targetOdometerKm;
+  final Value<DateTime?> completedAt;
+  final Value<int?> lastMileageNotificationPercent;
   const ServiceRemindersCompanion({
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -3395,6 +3656,8 @@ class ServiceRemindersCompanion extends UpdateCompanion<ServiceReminder> {
     this.maintenanceRecordId = const Value.absent(),
     this.targetDate = const Value.absent(),
     this.targetOdometerKm = const Value.absent(),
+    this.completedAt = const Value.absent(),
+    this.lastMileageNotificationPercent = const Value.absent(),
   });
   ServiceRemindersCompanion.insert({
     this.createdAt = const Value.absent(),
@@ -3404,6 +3667,8 @@ class ServiceRemindersCompanion extends UpdateCompanion<ServiceReminder> {
     required int maintenanceRecordId,
     this.targetDate = const Value.absent(),
     this.targetOdometerKm = const Value.absent(),
+    this.completedAt = const Value.absent(),
+    this.lastMileageNotificationPercent = const Value.absent(),
   }) : vehicleId = Value(vehicleId),
        maintenanceRecordId = Value(maintenanceRecordId);
   static Insertable<ServiceReminder> custom({
@@ -3414,6 +3679,8 @@ class ServiceRemindersCompanion extends UpdateCompanion<ServiceReminder> {
     Expression<int>? maintenanceRecordId,
     Expression<DateTime>? targetDate,
     Expression<int>? targetOdometerKm,
+    Expression<DateTime>? completedAt,
+    Expression<int>? lastMileageNotificationPercent,
   }) {
     return RawValuesInsertable({
       if (createdAt != null) 'created_at': createdAt,
@@ -3424,6 +3691,9 @@ class ServiceRemindersCompanion extends UpdateCompanion<ServiceReminder> {
         'maintenance_record_id': maintenanceRecordId,
       if (targetDate != null) 'target_date': targetDate,
       if (targetOdometerKm != null) 'target_odometer_km': targetOdometerKm,
+      if (completedAt != null) 'completed_at': completedAt,
+      if (lastMileageNotificationPercent != null)
+        'last_mileage_notification_percent': lastMileageNotificationPercent,
     });
   }
 
@@ -3435,6 +3705,8 @@ class ServiceRemindersCompanion extends UpdateCompanion<ServiceReminder> {
     Value<int>? maintenanceRecordId,
     Value<DateTime?>? targetDate,
     Value<int?>? targetOdometerKm,
+    Value<DateTime?>? completedAt,
+    Value<int?>? lastMileageNotificationPercent,
   }) {
     return ServiceRemindersCompanion(
       createdAt: createdAt ?? this.createdAt,
@@ -3444,6 +3716,9 @@ class ServiceRemindersCompanion extends UpdateCompanion<ServiceReminder> {
       maintenanceRecordId: maintenanceRecordId ?? this.maintenanceRecordId,
       targetDate: targetDate ?? this.targetDate,
       targetOdometerKm: targetOdometerKm ?? this.targetOdometerKm,
+      completedAt: completedAt ?? this.completedAt,
+      lastMileageNotificationPercent:
+          lastMileageNotificationPercent ?? this.lastMileageNotificationPercent,
     );
   }
 
@@ -3471,6 +3746,14 @@ class ServiceRemindersCompanion extends UpdateCompanion<ServiceReminder> {
     if (targetOdometerKm.present) {
       map['target_odometer_km'] = Variable<int>(targetOdometerKm.value);
     }
+    if (completedAt.present) {
+      map['completed_at'] = Variable<DateTime>(completedAt.value);
+    }
+    if (lastMileageNotificationPercent.present) {
+      map['last_mileage_notification_percent'] = Variable<int>(
+        lastMileageNotificationPercent.value,
+      );
+    }
     return map;
   }
 
@@ -3483,7 +3766,11 @@ class ServiceRemindersCompanion extends UpdateCompanion<ServiceReminder> {
           ..write('vehicleId: $vehicleId, ')
           ..write('maintenanceRecordId: $maintenanceRecordId, ')
           ..write('targetDate: $targetDate, ')
-          ..write('targetOdometerKm: $targetOdometerKm')
+          ..write('targetOdometerKm: $targetOdometerKm, ')
+          ..write('completedAt: $completedAt, ')
+          ..write(
+            'lastMileageNotificationPercent: $lastMileageNotificationPercent',
+          )
           ..write(')'))
         .toString();
   }

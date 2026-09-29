@@ -12,13 +12,20 @@ class UpdateFuelEvent {
     required FuelEventRepository fuelEvents,
     required MaintenanceRepository maintenance,
     DomainValidator validator = const DomainValidator(),
-  }) : this._(fuelEvents, maintenance, validator);
+    OdometerUpdated? onOdometerUpdated,
+  }) : this._(fuelEvents, maintenance, validator, onOdometerUpdated);
 
-  const UpdateFuelEvent._(this._fuelEvents, this._maintenance, this._validator);
+  const UpdateFuelEvent._(
+    this._fuelEvents,
+    this._maintenance,
+    this._validator,
+    this._onOdometerUpdated,
+  );
 
   final FuelEventRepository _fuelEvents;
   final MaintenanceRepository _maintenance;
   final DomainValidator _validator;
+  final OdometerUpdated? _onOdometerUpdated;
 
   Future<int> call(int eventId, FuelEventInput input) async {
     final current = await _fuelEvents.findById(eventId);
@@ -86,6 +93,7 @@ class UpdateFuelEvent {
         updatedAt: DateTime.now().toUtc(),
       ),
     );
+    await _onOdometerUpdated?.call(input.vehicleId);
     return eventId;
   }
 }

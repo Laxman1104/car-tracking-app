@@ -6,8 +6,11 @@ import '../application/fuel/create_fuel_event.dart';
 import '../application/fuel/delete_fuel_event.dart';
 import '../application/fuel/load_fuel_history.dart';
 import '../application/fuel/update_fuel_event.dart';
+import '../application/analytics/load_analytics.dart';
 import '../application/maintenance/local_service_reminder_scheduler.dart';
 import '../application/maintenance/maintenance_record_service.dart';
+import '../application/portability/data_portability_service.dart';
+import '../application/vehicle/vehicle_lifecycle_service.dart';
 import '../data/database/app_database.dart';
 import '../data/repositories/attachment_repository.dart';
 import '../data/repositories/fuel_event_repository.dart';
@@ -19,11 +22,22 @@ import '../presentation/fuel/cycle_details_screen.dart';
 import '../presentation/fuel/fuel_event_details_screen.dart';
 import '../presentation/fuel/fuel_event_form_screen.dart';
 import '../presentation/fuel/fuel_history_screen.dart';
+import '../presentation/analytics/analytics_screen.dart';
 import '../presentation/maintenance/maintenance_history_screen.dart';
+import '../presentation/settings/data_management_screen.dart';
+import '../presentation/settings/vehicle_lifecycle_screen.dart';
+import '../presentation/settings/vehicle_setup_screen.dart';
 import '../presentation/theme/app_theme.dart';
 
 class StageFourPreviewApp extends StatefulWidget {
-  const StageFourPreviewApp({super.key});
+  const StageFourPreviewApp({
+    super.key,
+    this.seedPreviewData = false,
+    this.useInMemoryDatabase = false,
+  });
+
+  final bool seedPreviewData;
+  final bool useInMemoryDatabase;
 
   @override
   State<StageFourPreviewApp> createState() => _StageFourPreviewAppState();
@@ -32,17 +46,23 @@ class StageFourPreviewApp extends StatefulWidget {
 class _StageFourPreviewAppState extends State<StageFourPreviewApp> {
   late final AppDatabase _database;
   late final AttachmentFileStore _fileStore;
-  late final LocalServiceReminderScheduler _scheduler;
-  late final Future<int> _vehicleId;
+  late final ServiceReminderScheduler _scheduler;
+  late Future<Vehicle?> _activeVehicle;
 
   FuelEventRepository get _fuel => FuelEventRepository(_database);
   MaintenanceRepository get _maintenance => MaintenanceRepository(_database);
 
-  CreateFuelEvent get _createFuel =>
-      CreateFuelEvent(fuelEvents: _fuel, maintenance: _maintenance);
+  CreateFuelEvent get _createFuel => CreateFuelEvent(
+    fuelEvents: _fuel,
+    maintenance: _maintenance,
+    onOdometerUpdated: _maintenanceService.reconcileReminders,
+  );
 
-  UpdateFuelEvent get _updateFuel =>
-      UpdateFuelEvent(fuelEvents: _fuel, maintenance: _maintenance);
+  UpdateFuelEvent get _updateFuel => UpdateFuelEvent(
+    fuelEvents: _fuel,
+    maintenance: _maintenance,
+    onOdometerUpdated: _maintenanceService.reconcileReminders,
+  );
 
   MaintenanceRecordService get _maintenanceService => MaintenanceRecordService(
     database: _database,
@@ -54,18 +74,45 @@ class _StageFourPreviewAppState extends State<StageFourPreviewApp> {
     scheduler: _scheduler,
   );
 
+  LoadAnalytics get _loadAnalytics => LoadAnalytics(
+    fuelEvents: _fuel,
+    maintenance: _maintenance,
+    reminders: ServiceReminderRepository(_database),
+  );
+
+  DataPortabilityService get _portability =>
+      DataPortabilityService(_database, _fileStore);
+
+  VehicleLifecycleService get _vehicleLifecycle => VehicleLifecycleService(
+    database: _database,
+    fileStore: _fileStore,
+    scheduler: _scheduler,
+  );
+
   @override
   void initState() {
     super.initState();
-    _database = AppDatabase.forTesting(NativeDatabase.memory());
-    _fileStore = AppAttachmentFileStore();
-    _scheduler = LocalServiceReminderScheduler();
-    _vehicleId = _seed();
+    _database = widget.useInMemoryDatabase
+        ? AppDatabase.forTesting(NativeDatabase.memory())
+        : AppDatabase();
+    _fileStore = widget.useInMemoryDatabase
+        ? _InMemoryAttachmentFileStore()
+        : AppAttachmentFileStore();
+    _scheduler = widget.useInMemoryDatabase
+        ? const NoopServiceReminderScheduler()
+        : LocalServiceReminderScheduler();
+    _activeVehicle = widget.seedPreviewData
+        ? _seed()
+        : VehicleRepository(_database).findActive();
   }
 
-  Future<int> _seed() async {
-    final vehicleId = await VehicleRepository(_database)
-        .create(VehiclesCompanion.insert(displayName: 'Stage 4 Preview Car'));
+  Future<Vehicle> _seed() async {
+    final vehicleId = await VehicleRepository(_database).create(
+      VehiclesCompanion.insert(
+        displayName: 'Proton S70',
+        startingOdometerKm: const Value(10000),
+      ),
+    );
     final now = DateTime.now();
     for (final fixture in [
       (14, 10000, 'PETRONAS', 40000, 7000, true),
@@ -91,6 +138,7 @@ class _StageFourPreviewAppState extends State<StageFourPreviewApp> {
         odometerKm: 10450,
         category: MaintenanceCategory.service,
         workshop: const Value('Proton Service Centre'),
+        serviceTitle: const Value('General Service'),
         totalCostSen: 62000,
         notes: const Value('Scheduled service and inspection.'),
       ),
@@ -121,7 +169,53 @@ class _StageFourPreviewAppState extends State<StageFourPreviewApp> {
         targetOdometerKm: const Value(20000),
       ),
     );
-    return vehicleId;
+    final tyreRecordId = await _maintenance.createRecord(
+      MaintenanceRecordsCompanion.insert(
+        vehicleId: vehicleId,
+        occurredAt: now.subtract(const Duration(hours: 6)).toUtc(),
+        odometerKm: 10450,
+        category: MaintenanceCategory.service,
+        workshop: const Value('Tyre Specialist'),
+        serviceTitle: const Value('Tyre Rotation'),
+        totalCostSen: 12000,
+      ),
+    );
+    await _maintenance.createItem(
+      MaintenanceItemsCompanion.insert(
+        vehicleId: vehicleId,
+        maintenanceRecordId: tyreRecordId,
+        name: 'Tyre inspection',
+        description: const Value('Rotation and pressure check'),
+        costSen: 12000,
+      ),
+    );
+    await ServiceReminderRepository(_database).create(
+      ServiceRemindersCompanion.insert(
+        vehicleId: vehicleId,
+        maintenanceRecordId: tyreRecordId,
+        targetDate: Value(now.add(const Duration(days: 90)).toUtc()),
+        targetOdometerKm: const Value(15000),
+      ),
+    );
+    return (await VehicleRepository(_database).findById(vehicleId))!;
+  }
+
+  Future<void> _createInitialVehicle(VehicleSetupData setup) async {
+    final now = DateTime.now().toUtc();
+    final repository = VehicleRepository(_database);
+    final id = await repository.create(
+      VehiclesCompanion.insert(
+        displayName: setup.name,
+        registrationNumber: Value(setup.registrationNumber),
+        startingOdometerKm: Value(setup.startingOdometerKm),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+      ),
+    );
+    if (!mounted) return;
+    setState(() {
+      _activeVehicle = repository.findById(id);
+    });
   }
 
   @override
@@ -133,103 +227,340 @@ class _StageFourPreviewAppState extends State<StageFourPreviewApp> {
   @override
   Widget build(BuildContext context) => MaterialApp(
     debugShowCheckedModeBanner: false,
-    title: 'Car Tracker · Stages 3–4 Preview',
+    title: 'Car Tracker',
     theme: AppTheme.dark,
-    home: FutureBuilder<int>(
-      future: _vehicleId,
+    home: FutureBuilder<Vehicle?>(
+      future: _activeVehicle,
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
+        if (snapshot.connectionState != ConnectionState.done) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        final vehicleId = snapshot.requireData;
+        if (snapshot.hasError) {
+          return const Scaffold(
+            body: Center(child: Text('Could not load vehicle data.')),
+          );
+        }
+        final vehicle = snapshot.data;
+        if (vehicle == null) {
+          return FirstRunVehicleSetupScreen(onConfirm: _createInitialVehicle);
+        }
+        final vehicleId = vehicle.id;
         return _PreviewHome(
-          openFuel: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => FuelHistoryScreen(
-                vehicleId: vehicleId,
-                loadFuelHistory: LoadFuelHistory(fuelEvents: _fuel).call,
-                fuelFormBuilder: (context, saved) => FuelEventFormScreen(
+          vehicleName: vehicle.displayName,
+          loadCurrentOdometer: () async =>
+              (await _maintenanceService.loadHistory(vehicleId))
+                  .currentOdometerKm ??
+              vehicle.startingOdometerKm,
+          openAnalytics: () async {
+            await Navigator.push<void>(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AnalyticsScreen(
                   vehicleId: vehicleId,
-                  createFuelEvent: _createFuel,
-                  onSaved: (_) => saved(),
+                  loadAnalytics: _loadAnalytics.call,
                 ),
-                fuelEventDetailsBuilder: (context, event) =>
-                    FuelEventDetailsScreen(
-                      event: event,
-                      createFuelEvent: _createFuel,
-                      updateFuelEvent: _updateFuel,
-                      deleteFuelEvent: DeleteFuelEvent(fuelEvents: _fuel),
-                    ),
-                cycleDetailsBuilder: (context, cycle, number) =>
-                    CycleDetailsScreen(
-                      cycle: cycle,
-                      cycleNumber: number,
-                      eventDetailsBuilder: (context, event) =>
-                          FuelEventDetailsScreen(
-                            event: event,
-                            createFuelEvent: _createFuel,
-                            updateFuelEvent: _updateFuel,
-                            deleteFuelEvent: DeleteFuelEvent(fuelEvents: _fuel),
-                          ),
-                    ),
               ),
-            ),
-          ),
-          openMaintenance: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => MaintenanceHistoryScreen(
-                vehicleId: vehicleId,
-                service: _maintenanceService,
-                fileStore: _fileStore,
+            );
+          },
+          openSettings: () async {
+            final newVehicleId = await Navigator.push<int>(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DataManagementScreen(
+                  service: _portability,
+                  vehicleLifecycleBuilder: (_) => VehicleLifecycleScreen(
+                    currentVehicle: vehicle,
+                    vehicles: VehicleRepository(_database),
+                    deletePastVehicle: _vehicleLifecycle.deleteRetiredVehicle,
+                    onVehicleRetired:
+                        _vehicleLifecycle.cancelVehicleNotifications,
+                    pastFuelBuilder: (_, pastVehicle) => FuelHistoryScreen(
+                      vehicleId: pastVehicle.id,
+                      loadFuelHistory: LoadFuelHistory(fuelEvents: _fuel).call,
+                      readOnly: true,
+                      cycleDetailsBuilder: (_, cycle, number) =>
+                          CycleDetailsScreen(cycle: cycle, cycleNumber: number),
+                    ),
+                    pastMaintenanceBuilder: (_, pastVehicle) =>
+                        MaintenanceHistoryScreen(
+                          vehicleId: pastVehicle.id,
+                          service: _maintenanceService,
+                          fileStore: _fileStore,
+                          readOnly: true,
+                        ),
+                    pastAnalyticsBuilder: (_, pastVehicle) => AnalyticsScreen(
+                      vehicleId: pastVehicle.id,
+                      loadAnalytics: _loadAnalytics.call,
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
+            );
+            if (newVehicleId != null && mounted) {
+              setState(() {
+                _activeVehicle = VehicleRepository(_database)
+                    .findById(newVehicleId)
+                    .then((value) => value!);
+              });
+            }
+          },
+          openFuel: () async {
+            await Navigator.push<void>(
+              context,
+              MaterialPageRoute(
+                builder: (_) => FuelHistoryScreen(
+                  vehicleId: vehicleId,
+                  loadFuelHistory: LoadFuelHistory(fuelEvents: _fuel).call,
+                  fuelFormBuilder: (context, saved) => FuelEventFormScreen(
+                    vehicleId: vehicleId,
+                    createFuelEvent: _createFuel,
+                    onSaved: (_) => saved(),
+                  ),
+                  fuelEventDetailsBuilder: (context, event) =>
+                      FuelEventDetailsScreen(
+                        event: event,
+                        createFuelEvent: _createFuel,
+                        updateFuelEvent: _updateFuel,
+                        deleteFuelEvent: DeleteFuelEvent(
+                          fuelEvents: _fuel,
+                          onOdometerUpdated:
+                              _maintenanceService.reconcileReminders,
+                        ),
+                      ),
+                  cycleDetailsBuilder: (context, cycle, number) =>
+                      CycleDetailsScreen(
+                        cycle: cycle,
+                        cycleNumber: number,
+                        eventDetailsBuilder: (context, event) =>
+                            FuelEventDetailsScreen(
+                              event: event,
+                              createFuelEvent: _createFuel,
+                              updateFuelEvent: _updateFuel,
+                              deleteFuelEvent: DeleteFuelEvent(
+                                fuelEvents: _fuel,
+                                onOdometerUpdated:
+                                    _maintenanceService.reconcileReminders,
+                              ),
+                            ),
+                      ),
+                ),
+              ),
+            );
+          },
+          openMaintenance: () async {
+            await Navigator.push<void>(
+              context,
+              MaterialPageRoute(
+                builder: (_) => MaintenanceHistoryScreen(
+                  vehicleId: vehicleId,
+                  service: _maintenanceService,
+                  fileStore: _fileStore,
+                ),
+              ),
+            );
+          },
         );
       },
     ),
   );
 }
 
-class _PreviewHome extends StatelessWidget {
-  const _PreviewHome({required this.openFuel, required this.openMaintenance});
-  final VoidCallback openFuel;
-  final VoidCallback openMaintenance;
+class _PreviewHome extends StatefulWidget {
+  const _PreviewHome({
+    required this.vehicleName,
+    required this.loadCurrentOdometer,
+    required this.openFuel,
+    required this.openMaintenance,
+    required this.openAnalytics,
+    required this.openSettings,
+  });
+
+  final String vehicleName;
+  final Future<int?> Function() loadCurrentOdometer;
+  final Future<void> Function() openFuel;
+  final Future<void> Function() openMaintenance;
+  final Future<void> Function() openAnalytics;
+  final Future<void> Function() openSettings;
+
+  @override
+  State<_PreviewHome> createState() => _PreviewHomeState();
+}
+
+class _PreviewHomeState extends State<_PreviewHome> {
+  late Future<int?> _currentOdometer;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentOdometer = widget.loadCurrentOdometer();
+  }
+
+  @override
+  void didUpdateWidget(covariant _PreviewHome oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.vehicleName != widget.vehicleName) {
+      _currentOdometer = widget.loadCurrentOdometer();
+    }
+  }
+
+  Future<void> _open(Future<void> Function() destination) async {
+    await destination();
+    if (!mounted) return;
+    setState(() {
+      _currentOdometer = widget.loadCurrentOdometer();
+    });
+  }
+
+  String _formattedOdometer(int currentOdometerKm) {
+    final digits = currentOdometerKm.toString();
+    return digits.replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Car Tracker Preview')),
+    appBar: AppBar(
+      title: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: AppColors.teal,
+              shape: BoxShape.circle,
+            ),
+            child: SizedBox.square(dimension: 12),
+          ),
+          SizedBox(width: 12),
+          Text('Car Tracker'),
+        ],
+      ),
+      actions: [
+        IconButton(
+          tooltip: 'Settings',
+          onPressed: () => _open(widget.openSettings),
+          icon: const Icon(Icons.settings_outlined),
+        ),
+        const SizedBox(width: 8),
+      ],
+    ),
     body: ListView(
-      padding: const EdgeInsets.all(16),
+      key: const Key('home-screen'),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
       children: [
         const Text(
-          'Stages 3 & 4',
-          style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
+          'MY VEHICLE',
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
         ),
-        const SizedBox(height: 8),
-        const Text(
-          'Test maintenance, attachments, reminders, and historical corrections.',
-          style: TextStyle(color: AppColors.textSecondary),
+        const SizedBox(height: 6),
+        Text(
+          widget.vehicleName,
+          key: const Key('home-vehicle-name'),
+          style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w700),
         ),
-        const SizedBox(height: 24),
-        _Destination(
-          key: const Key('preview-fuel'),
-          icon: Icons.local_gas_station_outlined,
-          title: 'Fuel History',
-          subtitle: 'Open a cycle and tap an event to edit or delete it.',
-          onTap: openFuel,
+        const SizedBox(height: 20),
+        Card(
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.speed_outlined, color: AppColors.teal, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'CURRENT ODOMETER',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                FutureBuilder<int?>(
+                  future: _currentOdometer,
+                  builder: (context, snapshot) => Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: snapshot.hasData
+                              ? _formattedOdometer(snapshot.requireData!)
+                              : '—',
+                          style: const TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const TextSpan(
+                          text: ' km',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 20,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Updated from your latest Fuel or Maintenance record',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 34),
+        SizedBox(
+          height: 180,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _Destination(
+                  key: const Key('preview-fuel'),
+                  icon: Icons.local_gas_station_outlined,
+                  title: 'Fuel Logs',
+                  subtitle: 'Cycles and refuels',
+                  accent: AppColors.primary,
+                  compact: true,
+                  onTap: () => _open(widget.openFuel),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _Destination(
+                  key: const Key('preview-maintenance'),
+                  icon: Icons.build_outlined,
+                  title: 'Maintenance',
+                  subtitle: 'Service and repairs',
+                  accent: AppColors.teal,
+                  compact: true,
+                  onTap: () => _open(widget.openMaintenance),
+                ),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 12),
-        _Destination(
-          key: const Key('preview-maintenance'),
-          icon: Icons.home_repair_service_outlined,
-          title: 'Maintenance History',
-          subtitle:
-              'Add, edit, attach receipts, set reminders, or delete records.',
-          onTap: openMaintenance,
+        SizedBox(
+          height: 128,
+          child: _Destination(
+            icon: Icons.bar_chart_outlined,
+            title: 'View analytics',
+            subtitle: 'Consumption and cost trends',
+            accent: AppColors.primary,
+            onTap: () => _open(widget.openAnalytics),
+          ),
         ),
       ],
     ),
@@ -242,12 +573,16 @@ class _Destination extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
+    required this.accent,
     required this.onTap,
+    this.compact = false,
   });
   final IconData icon;
   final String title;
   final String subtitle;
+  final Color accent;
   final VoidCallback onTap;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -255,34 +590,109 @@ class _Destination extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Row(
-          children: [
-            Icon(icon, color: AppColors.teal, size: 34),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        padding: EdgeInsets.all(compact ? 14 : 16),
+        child: compact
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
+                  Container(
+                    width: 58,
+                    height: 58,
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(icon, color: accent, size: 34),
+                  ),
+                  const SizedBox(height: 12),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 5),
                   Text(
                     subtitle,
-                    style: const TextStyle(color: AppColors.textSecondary),
+                    maxLines: 2,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Icon(icon, color: accent, size: 34),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
-            ),
-            const Icon(Icons.chevron_right),
-          ],
-        ),
       ),
     ),
   );
+}
+
+class _InMemoryAttachmentFileStore implements AttachmentFileStore {
+  int _nextFile = 0;
+
+  @override
+  Future<String> absolutePath(String relativePath) async => relativePath;
+
+  @override
+  Future<void> deleteFile(String relativePath) async {}
+
+  @override
+  Future<void> deleteRecordDirectory(int recordId) async {}
+
+  @override
+  Future<String> importFile(
+    int recordId,
+    MaintenanceAttachmentInput input,
+  ) async => '$recordId/${_nextFile++}_${input.fileName}';
 }

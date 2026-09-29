@@ -1,0 +1,1064 @@
+{
+  "_meta": {
+    "description": "This file contains a serialized version of schema entities for drift.",
+    "version": "1.3.0"
+  },
+  "options": {
+    "store_date_time_values_as_text": false
+  },
+  "entities": [
+    {
+      "id": 0,
+      "references": [],
+      "type": "table",
+      "data": {
+        "name": "vehicles",
+        "was_declared_in_moor": false,
+        "columns": [
+          {
+            "name": "created_at",
+            "getter_name": "createdAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": "() => DateTime.now().toUtc()",
+            "dsl_features": []
+          },
+          {
+            "name": "updated_at",
+            "getter_name": "updatedAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": "() => DateTime.now().toUtc()",
+            "dsl_features": []
+          },
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "defaultConstraints": "PRIMARY KEY AUTOINCREMENT",
+            "dialectAwareDefaultConstraints": {
+              "sqlite": "PRIMARY KEY AUTOINCREMENT"
+            },
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "auto-increment"
+            ]
+          },
+          {
+            "name": "display_name",
+            "getter_name": "displayName",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "allowed-lengths": {
+                  "min": 1,
+                  "max": 120
+                }
+              }
+            ]
+          },
+          {
+            "name": "registration_number",
+            "getter_name": "registrationNumber",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "allowed-lengths": {
+                  "min": 1,
+                  "max": 32
+                }
+              }
+            ]
+          },
+          {
+            "name": "is_active",
+            "getter_name": "isActive",
+            "moor_type": "bool",
+            "nullable": false,
+            "customConstraints": null,
+            "defaultConstraints": "CHECK (\"is_active\" IN (0, 1))",
+            "dialectAwareDefaultConstraints": {
+              "sqlite": "CHECK (\"is_active\" IN (0, 1))"
+            },
+            "default_dart": "const CustomExpression('1')",
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "retired_at",
+            "getter_name": "retiredAt",
+            "moor_type": "dateTime",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "CHECK ((is_active = 1 AND retired_at IS NULL) OR (is_active = 0 AND retired_at IS NOT NULL))"
+        ]
+      }
+    },
+    {
+      "id": 1,
+      "references": [
+        0
+      ],
+      "type": "table",
+      "data": {
+        "name": "fuel_events",
+        "was_declared_in_moor": false,
+        "columns": [
+          {
+            "name": "created_at",
+            "getter_name": "createdAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": "() => DateTime.now().toUtc()",
+            "dsl_features": []
+          },
+          {
+            "name": "updated_at",
+            "getter_name": "updatedAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": "() => DateTime.now().toUtc()",
+            "dsl_features": []
+          },
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "defaultConstraints": "PRIMARY KEY AUTOINCREMENT",
+            "dialectAwareDefaultConstraints": {
+              "sqlite": "PRIMARY KEY AUTOINCREMENT"
+            },
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "auto-increment"
+            ]
+          },
+          {
+            "name": "vehicle_id",
+            "getter_name": "vehicleId",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "defaultConstraints": "REFERENCES vehicles (id) ON UPDATE CASCADE ON DELETE RESTRICT",
+            "dialectAwareDefaultConstraints": {
+              "sqlite": "REFERENCES vehicles (id) ON UPDATE CASCADE ON DELETE RESTRICT"
+            },
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "vehicles",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": "cascade",
+                  "on_delete": "restrict"
+                }
+              }
+            ]
+          },
+          {
+            "name": "occurred_at",
+            "getter_name": "occurredAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "odometer_km",
+            "getter_name": "odometerKm",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "fuel_brand",
+            "getter_name": "fuelBrand",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "allowed-lengths": {
+                  "min": 1,
+                  "max": 80
+                }
+              }
+            ]
+          },
+          {
+            "name": "fuel_volume_millilitres",
+            "getter_name": "fuelVolumeMillilitres",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "cost_sen",
+            "getter_name": "costSen",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "is_full_tank",
+            "getter_name": "isFullTank",
+            "moor_type": "bool",
+            "nullable": false,
+            "customConstraints": null,
+            "defaultConstraints": "CHECK (\"is_full_tank\" IN (0, 1))",
+            "dialectAwareDefaultConstraints": {
+              "sqlite": "CHECK (\"is_full_tank\" IN (0, 1))"
+            },
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "trip_distance_metres",
+            "getter_name": "tripDistanceMetres",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "CHECK (odometer_km >= 0)",
+          "CHECK (fuel_volume_millilitres > 0)",
+          "CHECK (cost_sen >= 0)",
+          "CHECK (trip_distance_metres IS NULL OR trip_distance_metres >= 0)"
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "references": [
+        0
+      ],
+      "type": "table",
+      "data": {
+        "name": "maintenance_records",
+        "was_declared_in_moor": false,
+        "columns": [
+          {
+            "name": "created_at",
+            "getter_name": "createdAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": "() => DateTime.now().toUtc()",
+            "dsl_features": []
+          },
+          {
+            "name": "updated_at",
+            "getter_name": "updatedAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": "() => DateTime.now().toUtc()",
+            "dsl_features": []
+          },
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "defaultConstraints": "PRIMARY KEY AUTOINCREMENT",
+            "dialectAwareDefaultConstraints": {
+              "sqlite": "PRIMARY KEY AUTOINCREMENT"
+            },
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "auto-increment"
+            ]
+          },
+          {
+            "name": "vehicle_id",
+            "getter_name": "vehicleId",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "defaultConstraints": "REFERENCES vehicles (id) ON UPDATE CASCADE ON DELETE RESTRICT",
+            "dialectAwareDefaultConstraints": {
+              "sqlite": "REFERENCES vehicles (id) ON UPDATE CASCADE ON DELETE RESTRICT"
+            },
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "vehicles",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": "cascade",
+                  "on_delete": "restrict"
+                }
+              }
+            ]
+          },
+          {
+            "name": "occurred_at",
+            "getter_name": "occurredAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "odometer_km",
+            "getter_name": "odometerKm",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "category",
+            "getter_name": "category",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [],
+            "type_converter": {
+              "dart_expr": "const EnumNameConverter<MaintenanceCategory>(MaintenanceCategory.values)",
+              "dart_type_name": "MaintenanceCategory"
+            }
+          },
+          {
+            "name": "workshop",
+            "getter_name": "workshop",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "allowed-lengths": {
+                  "min": 1,
+                  "max": 160
+                }
+              }
+            ]
+          },
+          {
+            "name": "service_title",
+            "getter_name": "serviceTitle",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "allowed-lengths": {
+                  "min": 1,
+                  "max": 120
+                }
+              }
+            ]
+          },
+          {
+            "name": "total_cost_sen",
+            "getter_name": "totalCostSen",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "notes",
+            "getter_name": "notes",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "CHECK (odometer_km >= 0)",
+          "CHECK (total_cost_sen >= 0)",
+          "CHECK (category IN ('service', 'repairs', 'accessories'))"
+        ],
+        "unique_keys": [
+          [
+            "id",
+            "vehicle_id"
+          ]
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "references": [
+        0,
+        2
+      ],
+      "type": "table",
+      "data": {
+        "name": "maintenance_items",
+        "was_declared_in_moor": false,
+        "columns": [
+          {
+            "name": "created_at",
+            "getter_name": "createdAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": "() => DateTime.now().toUtc()",
+            "dsl_features": []
+          },
+          {
+            "name": "updated_at",
+            "getter_name": "updatedAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": "() => DateTime.now().toUtc()",
+            "dsl_features": []
+          },
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "defaultConstraints": "PRIMARY KEY AUTOINCREMENT",
+            "dialectAwareDefaultConstraints": {
+              "sqlite": "PRIMARY KEY AUTOINCREMENT"
+            },
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "auto-increment"
+            ]
+          },
+          {
+            "name": "vehicle_id",
+            "getter_name": "vehicleId",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "maintenance_record_id",
+            "getter_name": "maintenanceRecordId",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "name",
+            "getter_name": "name",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "allowed-lengths": {
+                  "min": 1,
+                  "max": 160
+                }
+              }
+            ]
+          },
+          {
+            "name": "description",
+            "getter_name": "description",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "cost_sen",
+            "getter_name": "costSen",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "position",
+            "getter_name": "position",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": "const CustomExpression('0')",
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "CHECK (cost_sen >= 0)",
+          "CHECK (position >= 0)",
+          "FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON UPDATE CASCADE ON DELETE RESTRICT",
+          "FOREIGN KEY (maintenance_record_id, vehicle_id) REFERENCES maintenance_records(id, vehicle_id) ON UPDATE CASCADE ON DELETE CASCADE"
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "references": [
+        0,
+        2
+      ],
+      "type": "table",
+      "data": {
+        "name": "attachments",
+        "was_declared_in_moor": false,
+        "columns": [
+          {
+            "name": "created_at",
+            "getter_name": "createdAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": "() => DateTime.now().toUtc()",
+            "dsl_features": []
+          },
+          {
+            "name": "updated_at",
+            "getter_name": "updatedAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": "() => DateTime.now().toUtc()",
+            "dsl_features": []
+          },
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "defaultConstraints": "PRIMARY KEY AUTOINCREMENT",
+            "dialectAwareDefaultConstraints": {
+              "sqlite": "PRIMARY KEY AUTOINCREMENT"
+            },
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "auto-increment"
+            ]
+          },
+          {
+            "name": "vehicle_id",
+            "getter_name": "vehicleId",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "maintenance_record_id",
+            "getter_name": "maintenanceRecordId",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "kind",
+            "getter_name": "kind",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [],
+            "type_converter": {
+              "dart_expr": "const EnumNameConverter<AttachmentKind>(AttachmentKind.values)",
+              "dart_type_name": "AttachmentKind"
+            }
+          },
+          {
+            "name": "original_file_name",
+            "getter_name": "originalFileName",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "allowed-lengths": {
+                  "min": 1,
+                  "max": 255
+                }
+              }
+            ]
+          },
+          {
+            "name": "relative_path",
+            "getter_name": "relativePath",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "defaultConstraints": "UNIQUE",
+            "dialectAwareDefaultConstraints": {
+              "sqlite": "UNIQUE"
+            },
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "unique"
+            ]
+          },
+          {
+            "name": "mime_type",
+            "getter_name": "mimeType",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "allowed-lengths": {
+                  "min": 1,
+                  "max": 120
+                }
+              }
+            ]
+          },
+          {
+            "name": "byte_size",
+            "getter_name": "byteSize",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "position",
+            "getter_name": "position",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": "const CustomExpression('0')",
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "CHECK (byte_size >= 0)",
+          "CHECK (position >= 0)",
+          "CHECK (kind IN ('image', 'pdf'))",
+          "FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON UPDATE CASCADE ON DELETE RESTRICT",
+          "FOREIGN KEY (maintenance_record_id, vehicle_id) REFERENCES maintenance_records(id, vehicle_id) ON UPDATE CASCADE ON DELETE CASCADE"
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "references": [
+        0,
+        2
+      ],
+      "type": "table",
+      "data": {
+        "name": "service_reminders",
+        "was_declared_in_moor": false,
+        "columns": [
+          {
+            "name": "created_at",
+            "getter_name": "createdAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": "() => DateTime.now().toUtc()",
+            "dsl_features": []
+          },
+          {
+            "name": "updated_at",
+            "getter_name": "updatedAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": "() => DateTime.now().toUtc()",
+            "dsl_features": []
+          },
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "defaultConstraints": "PRIMARY KEY AUTOINCREMENT",
+            "dialectAwareDefaultConstraints": {
+              "sqlite": "PRIMARY KEY AUTOINCREMENT"
+            },
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "auto-increment"
+            ]
+          },
+          {
+            "name": "vehicle_id",
+            "getter_name": "vehicleId",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "maintenance_record_id",
+            "getter_name": "maintenanceRecordId",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "target_date",
+            "getter_name": "targetDate",
+            "moor_type": "dateTime",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "target_odometer_km",
+            "getter_name": "targetOdometerKm",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "CHECK (target_date IS NOT NULL OR target_odometer_km IS NOT NULL)",
+          "CHECK (target_odometer_km IS NULL OR target_odometer_km >= 0)",
+          "FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON UPDATE CASCADE ON DELETE RESTRICT",
+          "FOREIGN KEY (maintenance_record_id, vehicle_id) REFERENCES maintenance_records(id, vehicle_id) ON UPDATE CASCADE ON DELETE CASCADE"
+        ],
+        "unique_keys": [
+          [
+            "maintenance_record_id"
+          ]
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "references": [
+        1
+      ],
+      "type": "index",
+      "data": {
+        "on": 1,
+        "name": "fuel_events_vehicle_occurred_at",
+        "sql": null,
+        "unique": false,
+        "columns": [
+          {
+            "column": "vehicle_id",
+            "order_by": null
+          },
+          {
+            "column": "occurred_at",
+            "order_by": null
+          }
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "references": [
+        2
+      ],
+      "type": "index",
+      "data": {
+        "on": 2,
+        "name": "maintenance_records_vehicle_occurred_at",
+        "sql": null,
+        "unique": false,
+        "columns": [
+          {
+            "column": "vehicle_id",
+            "order_by": null
+          },
+          {
+            "column": "occurred_at",
+            "order_by": null
+          }
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "references": [
+        3
+      ],
+      "type": "index",
+      "data": {
+        "on": 3,
+        "name": "maintenance_items_record",
+        "sql": null,
+        "unique": false,
+        "columns": [
+          {
+            "column": "maintenance_record_id",
+            "order_by": null
+          },
+          {
+            "column": "position",
+            "order_by": null
+          }
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "references": [
+        4
+      ],
+      "type": "index",
+      "data": {
+        "on": 4,
+        "name": "attachments_record",
+        "sql": null,
+        "unique": false,
+        "columns": [
+          {
+            "column": "maintenance_record_id",
+            "order_by": null
+          },
+          {
+            "column": "position",
+            "order_by": null
+          }
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "references": [
+        5
+      ],
+      "type": "index",
+      "data": {
+        "on": 5,
+        "name": "service_reminders_vehicle",
+        "sql": null,
+        "unique": false,
+        "columns": [
+          {
+            "column": "vehicle_id",
+            "order_by": null
+          }
+        ]
+      }
+    }
+  ],
+  "fixed_sql": [
+    {
+      "name": "vehicles",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"vehicles\" (\"created_at\" INTEGER NOT NULL, \"updated_at\" INTEGER NOT NULL, \"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, \"display_name\" TEXT NOT NULL, \"registration_number\" TEXT NULL, \"is_active\" INTEGER NOT NULL DEFAULT 1 CHECK (\"is_active\" IN (0, 1)), \"retired_at\" INTEGER NULL, CHECK ((is_active = 1 AND retired_at IS NULL) OR (is_active = 0 AND retired_at IS NOT NULL)));"
+        }
+      ]
+    },
+    {
+      "name": "fuel_events",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"fuel_events\" (\"created_at\" INTEGER NOT NULL, \"updated_at\" INTEGER NOT NULL, \"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, \"vehicle_id\" INTEGER NOT NULL REFERENCES vehicles (id) ON UPDATE CASCADE ON DELETE RESTRICT, \"occurred_at\" INTEGER NOT NULL, \"odometer_km\" INTEGER NOT NULL, \"fuel_brand\" TEXT NOT NULL, \"fuel_volume_millilitres\" INTEGER NOT NULL, \"cost_sen\" INTEGER NOT NULL, \"is_full_tank\" INTEGER NOT NULL CHECK (\"is_full_tank\" IN (0, 1)), \"trip_distance_metres\" INTEGER NULL, CHECK (odometer_km >= 0), CHECK (fuel_volume_millilitres > 0), CHECK (cost_sen >= 0), CHECK (trip_distance_metres IS NULL OR trip_distance_metres >= 0));"
+        }
+      ]
+    },
+    {
+      "name": "maintenance_records",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"maintenance_records\" (\"created_at\" INTEGER NOT NULL, \"updated_at\" INTEGER NOT NULL, \"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, \"vehicle_id\" INTEGER NOT NULL REFERENCES vehicles (id) ON UPDATE CASCADE ON DELETE RESTRICT, \"occurred_at\" INTEGER NOT NULL, \"odometer_km\" INTEGER NOT NULL, \"category\" TEXT NOT NULL, \"workshop\" TEXT NULL, \"service_title\" TEXT NULL, \"total_cost_sen\" INTEGER NOT NULL, \"notes\" TEXT NULL, UNIQUE (\"id\", \"vehicle_id\"), CHECK (odometer_km >= 0), CHECK (total_cost_sen >= 0), CHECK (category IN ('service', 'repairs', 'accessories')));"
+        }
+      ]
+    },
+    {
+      "name": "maintenance_items",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"maintenance_items\" (\"created_at\" INTEGER NOT NULL, \"updated_at\" INTEGER NOT NULL, \"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, \"vehicle_id\" INTEGER NOT NULL, \"maintenance_record_id\" INTEGER NOT NULL, \"name\" TEXT NOT NULL, \"description\" TEXT NULL, \"cost_sen\" INTEGER NOT NULL, \"position\" INTEGER NOT NULL DEFAULT 0, CHECK (cost_sen >= 0), CHECK (position >= 0), FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON UPDATE CASCADE ON DELETE RESTRICT, FOREIGN KEY (maintenance_record_id, vehicle_id) REFERENCES maintenance_records(id, vehicle_id) ON UPDATE CASCADE ON DELETE CASCADE);"
+        }
+      ]
+    },
+    {
+      "name": "attachments",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"attachments\" (\"created_at\" INTEGER NOT NULL, \"updated_at\" INTEGER NOT NULL, \"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, \"vehicle_id\" INTEGER NOT NULL, \"maintenance_record_id\" INTEGER NOT NULL, \"kind\" TEXT NOT NULL, \"original_file_name\" TEXT NOT NULL, \"relative_path\" TEXT NOT NULL UNIQUE, \"mime_type\" TEXT NOT NULL, \"byte_size\" INTEGER NOT NULL, \"position\" INTEGER NOT NULL DEFAULT 0, CHECK (byte_size >= 0), CHECK (position >= 0), CHECK (kind IN ('image', 'pdf')), FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON UPDATE CASCADE ON DELETE RESTRICT, FOREIGN KEY (maintenance_record_id, vehicle_id) REFERENCES maintenance_records(id, vehicle_id) ON UPDATE CASCADE ON DELETE CASCADE);"
+        }
+      ]
+    },
+    {
+      "name": "service_reminders",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"service_reminders\" (\"created_at\" INTEGER NOT NULL, \"updated_at\" INTEGER NOT NULL, \"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, \"vehicle_id\" INTEGER NOT NULL, \"maintenance_record_id\" INTEGER NOT NULL, \"target_date\" INTEGER NULL, \"target_odometer_km\" INTEGER NULL, UNIQUE (\"maintenance_record_id\"), CHECK (target_date IS NOT NULL OR target_odometer_km IS NOT NULL), CHECK (target_odometer_km IS NULL OR target_odometer_km >= 0), FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON UPDATE CASCADE ON DELETE RESTRICT, FOREIGN KEY (maintenance_record_id, vehicle_id) REFERENCES maintenance_records(id, vehicle_id) ON UPDATE CASCADE ON DELETE CASCADE);"
+        }
+      ]
+    },
+    {
+      "name": "fuel_events_vehicle_occurred_at",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX fuel_events_vehicle_occurred_at ON fuel_events (vehicle_id, occurred_at)"
+        }
+      ]
+    },
+    {
+      "name": "maintenance_records_vehicle_occurred_at",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX maintenance_records_vehicle_occurred_at ON maintenance_records (vehicle_id, occurred_at)"
+        }
+      ]
+    },
+    {
+      "name": "maintenance_items_record",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX maintenance_items_record ON maintenance_items (maintenance_record_id, position)"
+        }
+      ]
+    },
+    {
+      "name": "attachments_record",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX attachments_record ON attachments (maintenance_record_id, position)"
+        }
+      ]
+    },
+    {
+      "name": "service_reminders_vehicle",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX service_reminders_vehicle ON service_reminders (vehicle_id)"
+        }
+      ]
+    }
+  ]
+}

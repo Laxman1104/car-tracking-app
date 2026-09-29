@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
@@ -40,6 +41,7 @@ class MaintenanceRecordInput {
     required this.workshop,
     required this.totalCostSen,
     required this.items,
+    this.serviceTitle,
     this.notes,
     this.nextServiceDate,
     this.nextServiceOdometerKm,
@@ -54,6 +56,7 @@ class MaintenanceRecordInput {
   final String workshop;
   final int totalCostSen;
   final List<MaintenanceItemInput> items;
+  final String? serviceTitle;
   final String? notes;
   final DateTime? nextServiceDate;
   final int? nextServiceOdometerKm;
@@ -80,11 +83,13 @@ class MaintenanceHistoryData {
     required this.records,
     required this.currentOdometerKm,
     required this.activeReminder,
+    required this.activeReminderTitle,
   });
 
   final List<MaintenanceRecordBundle> records;
   final int? currentOdometerKm;
   final ServiceReminder? activeReminder;
+  final String? activeReminderTitle;
 }
 
 enum MaintenanceRecordIssue {
@@ -113,6 +118,14 @@ abstract interface class ServiceReminderScheduler {
   });
 
   Future<void> cancel(int maintenanceRecordId);
+
+  Future<void> showMileageProgress({
+    required int maintenanceRecordId,
+    required String title,
+    required int stagePercent,
+    required int currentOdometerKm,
+    required int targetOdometerKm,
+  });
 }
 
 class NoopServiceReminderScheduler implements ServiceReminderScheduler {
@@ -120,6 +133,15 @@ class NoopServiceReminderScheduler implements ServiceReminderScheduler {
 
   @override
   Future<void> cancel(int maintenanceRecordId) async {}
+
+  @override
+  Future<void> showMileageProgress({
+    required int maintenanceRecordId,
+    required String title,
+    required int stagePercent,
+    required int currentOdometerKm,
+    required int targetOdometerKm,
+  }) async {}
 
   @override
   Future<void> schedule({
@@ -227,6 +249,11 @@ class MaintenanceRecordService {
           odometerKm: input.odometerKm,
           category: input.category,
           workshop: Value(input.workshop.trim()),
+          serviceTitle: Value(
+            input.category == MaintenanceCategory.service
+                ? _nullableText(input.serviceTitle)
+                : null,
+          ),
           totalCostSen: input.totalCostSen,
           notes: Value(_nullableText(input.notes)),
         ),
@@ -234,7 +261,7 @@ class MaintenanceRecordService {
       await _replaceChildren(id, input, existingAttachments: const []);
       return id;
     });
-    await _reconcileNotifications(input.vehicleId);
+    await reconcileReminders(input.vehicleId);
     return recordId;
   }
 
@@ -258,6 +285,11 @@ class MaintenanceRecordService {
           odometerKm: input.odometerKm,
           category: input.category,
           workshop: Value(input.workshop.trim()),
+          serviceTitle: Value(
+            input.category == MaintenanceCategory.service
+                ? _nullableText(input.serviceTitle)
+                : null,
+          ),
           totalCostSen: input.totalCostSen,
           notes: Value(_nullableText(input.notes)),
           updatedAt: DateTime.now().toUtc(),
@@ -272,8 +304,8 @@ class MaintenanceRecordService {
     for (final attachment in removed) {
       await _fileStore.deleteFile(attachment.relativePath);
     }
-    await _scheduler.cancel(recordId);
-    await _reconcileNotifications(input.vehicleId);
+    _cancelNotification(recordId);
+    await reconcileReminders(input.vehicleId);
   }
 
   Future<void> delete(int recordId) async {
@@ -281,8 +313,8 @@ class MaintenanceRecordService {
     if (existing == null) return;
     await _database.transaction(() => _maintenance.deleteRecordById(recordId));
     await _fileStore.deleteRecordDirectory(recordId);
-    await _scheduler.cancel(recordId);
-    await _reconcileNotifications(existing.vehicleId);
+    _cancelNotification(recordId);
+    await reconcileReminders(existing.vehicleId);
   }
 
   Future<MaintenanceRecordBundle?> loadRecord(int recordId) async {
@@ -312,9 +344,11 @@ class MaintenanceRecordService {
     ];
     final current = const OdometerTimelineEngine().resolveCurrent(observations);
     ServiceReminder? active;
+    String? activeTitle;
     for (final bundle in bundles) {
-      if (bundle.reminder != null) {
+      if (bundle.reminder != null && bundle.reminder!.completedAt == null) {
         active = bundle.reminder;
+        activeTitle = bundle.record.serviceTitle;
         break;
       }
     }
@@ -322,6 +356,7 @@ class MaintenanceRecordService {
       records: List.unmodifiable(bundles),
       currentOdometerKm: current?.odometerKm,
       activeReminder: active,
+      activeReminderTitle: activeTitle,
     );
   }
 
@@ -466,24 +501,109 @@ class MaintenanceRecordService {
     }
   }
 
-  Future<void> _reconcileNotifications(int vehicleId) async {
-    final records = await _maintenance.findRecordsForVehicle(vehicleId);
+  Future<void> markReminderDone(int maintenanceRecordId) async {
+    final reminder = await _reminders.findForRecord(maintenanceRecordId);
+    if (reminder == null || reminder.completedAt != null) return;
+    await _reminders.update(
+      reminder.copyWith(completedAt: Value(DateTime.now().toUtc())),
+    );
+    _cancelNotification(maintenanceRecordId);
+  }
+
+  Future<void> reconcileReminders(int vehicleId) async {
     final reminders = await _reminders.findForVehicle(vehicleId);
+    final records = await _maintenance.findRecordsForVehicle(vehicleId);
+    final recordById = {for (final record in records) record.id: record};
+    final fuel = await _fuelEvents.findForVehicle(vehicleId);
+    final currentOdometer = const OdometerTimelineEngine().resolveCurrent([
+      ...fuel.map((event) => event.toOdometerObservation()),
+      ...records.map((record) => record.toOdometerObservation()),
+    ])?.odometerKm;
     for (final reminder in reminders) {
-      await _scheduler.cancel(reminder.maintenanceRecordId);
-    }
-    for (final record in records.reversed) {
-      final reminder = reminders
-          .where((entry) => entry.maintenanceRecordId == record.id)
-          .firstOrNull;
-      if (reminder == null) continue;
+      if (reminder.completedAt != null) continue;
       if (reminder.targetDate case final date?) {
-        await _scheduler.schedule(
-          maintenanceRecordId: record.id,
-          targetDate: date,
+        unawaited(
+          _scheduleDateNotification(reminder.maintenanceRecordId, date),
         );
       }
-      break;
+      final target = reminder.targetOdometerKm;
+      final record = recordById[reminder.maintenanceRecordId];
+      if (target == null || record == null || currentOdometer == null) continue;
+      final distanceToTarget = target - record.odometerKm;
+      if (distanceToTarget <= 0) continue;
+      final progress =
+          ((currentOdometer - record.odometerKm) * 100 / distanceToTarget)
+              .floor();
+      final stage = progress >= 100
+          ? 100
+          : progress >= 90
+          ? 90
+          : progress >= 80
+          ? 80
+          : 0;
+      if (stage == 0 ||
+          stage <= (reminder.lastMileageNotificationPercent ?? 0)) {
+        continue;
+      }
+      unawaited(
+        _showMileageNotification(
+          maintenanceRecordId: reminder.maintenanceRecordId,
+          title: record.serviceTitle ?? 'Service reminder',
+          stagePercent: stage,
+          currentOdometerKm: currentOdometer,
+          targetOdometerKm: target,
+        ),
+      );
+      await _reminders.update(
+        reminder.copyWith(lastMileageNotificationPercent: Value(stage)),
+      );
+    }
+  }
+
+  void _cancelNotification(int maintenanceRecordId) {
+    unawaited(_cancelNotificationSafely(maintenanceRecordId));
+  }
+
+  Future<void> _cancelNotificationSafely(int maintenanceRecordId) async {
+    try {
+      await _scheduler.cancel(maintenanceRecordId);
+    } catch (_) {
+      // Persistence and recalculation are authoritative; notification cleanup
+      // is best effort when the platform service is unavailable.
+    }
+  }
+
+  Future<void> _scheduleDateNotification(
+    int maintenanceRecordId,
+    DateTime targetDate,
+  ) async {
+    try {
+      await _scheduler.schedule(
+        maintenanceRecordId: maintenanceRecordId,
+        targetDate: targetDate,
+      );
+    } catch (_) {
+      // Notification availability must never roll back or block a record.
+    }
+  }
+
+  Future<void> _showMileageNotification({
+    required int maintenanceRecordId,
+    required String title,
+    required int stagePercent,
+    required int currentOdometerKm,
+    required int targetOdometerKm,
+  }) async {
+    try {
+      await _scheduler.showMileageProgress(
+        maintenanceRecordId: maintenanceRecordId,
+        title: title,
+        stagePercent: stagePercent,
+        currentOdometerKm: currentOdometerKm,
+        targetOdometerKm: targetOdometerKm,
+      );
+    } catch (_) {
+      // In-app reminder state remains valid if OS notifications are denied.
     }
   }
 

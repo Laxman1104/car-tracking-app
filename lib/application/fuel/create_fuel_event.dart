@@ -7,6 +7,8 @@ import '../../data/repositories/maintenance_repository.dart';
 import '../../domain/odometer/odometer_timeline.dart';
 import '../../domain/validation/domain_validation.dart';
 
+typedef OdometerUpdated = Future<void> Function(int vehicleId);
+
 class FuelEventInput {
   const FuelEventInput({
     required this.vehicleId,
@@ -55,17 +57,20 @@ class CreateFuelEvent {
     required FuelEventRepository fuelEvents,
     required MaintenanceRepository maintenance,
     DomainValidator validator = const DomainValidator(),
-  }) : this._internal(fuelEvents, maintenance, validator);
+    OdometerUpdated? onOdometerUpdated,
+  }) : this._internal(fuelEvents, maintenance, validator, onOdometerUpdated);
 
   const CreateFuelEvent._internal(
     this._fuelEvents,
     this._maintenance,
     this._validator,
+    this._onOdometerUpdated,
   );
 
   final FuelEventRepository _fuelEvents;
   final MaintenanceRepository _maintenance;
   final DomainValidator _validator;
+  final OdometerUpdated? _onOdometerUpdated;
 
   Future<int> call(FuelEventInput input) async {
     final brand = input.fuelBrand.trim();
@@ -116,7 +121,7 @@ class CreateFuelEvent {
       );
     }
 
-    return _fuelEvents.create(
+    final id = await _fuelEvents.create(
       FuelEventsCompanion.insert(
         vehicleId: input.vehicleId,
         occurredAt: input.occurredAt.toUtc(),
@@ -128,6 +133,8 @@ class CreateFuelEvent {
         tripDistanceMetres: Value(input.tripDistanceMetres),
       ),
     );
+    await _onOdometerUpdated?.call(input.vehicleId);
+    return id;
   }
 
   /// Compares Trip B with the odometer distance from the preceding Full event.

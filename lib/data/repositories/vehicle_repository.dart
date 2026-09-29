@@ -23,6 +23,19 @@ class VehicleRepository {
     )..orderBy([(vehicle) => OrderingTerm.asc(vehicle.id)])).get();
   }
 
+  Future<Vehicle?> findActive() {
+    return (_database.select(
+      _database.vehicles,
+    )..where((vehicle) => vehicle.isActive.equals(true))).getSingleOrNull();
+  }
+
+  Future<List<Vehicle>> findRetired() {
+    return (_database.select(_database.vehicles)
+          ..where((vehicle) => vehicle.isActive.equals(false))
+          ..orderBy([(vehicle) => OrderingTerm.desc(vehicle.retiredAt)]))
+        .get();
+  }
+
   Future<bool> update(Vehicle vehicle) {
     return _database.update(_database.vehicles).replace(vehicle);
   }

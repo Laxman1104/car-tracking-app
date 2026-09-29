@@ -22,6 +22,11 @@ class Vehicles extends AuditedTable {
   TextColumn get registrationNumber =>
       text().withLength(min: 1, max: 32).nullable()();
 
+  IntColumn get startingOdometerKm =>
+      integer().withDefault(const Constant(0))();
+
+  TextColumn get photoPath => text().nullable()();
+
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
 
   DateTimeColumn get retiredAt => dateTime().nullable()();
@@ -94,6 +99,10 @@ class MaintenanceRecords extends AuditedTable {
   TextColumn get category => textEnum<MaintenanceCategory>()();
 
   TextColumn get workshop => text().withLength(min: 1, max: 160).nullable()();
+
+  /// Optional user-facing title for Service visits and their reminders.
+  TextColumn get serviceTitle =>
+      text().withLength(min: 1, max: 120).nullable()();
 
   IntColumn get totalCostSen => integer()();
 
@@ -190,6 +199,10 @@ class ServiceReminders extends AuditedTable {
   DateTimeColumn get targetDate => dateTime().nullable()();
 
   IntColumn get targetOdometerKm => integer().nullable()();
+
+  DateTimeColumn get completedAt => dateTime().nullable()();
+
+  IntColumn get lastMileageNotificationPercent => integer().nullable()();
 
   @override
   List<Set<Column<Object>>> get uniqueKeys => [

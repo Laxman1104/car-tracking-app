@@ -22,7 +22,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -32,6 +32,28 @@ class AppDatabase extends _$AppDatabase {
         'CREATE UNIQUE INDEX one_active_vehicle '
         'ON vehicles (is_active) WHERE is_active = 1',
       );
+    },
+    onUpgrade: (migrator, from, to) async {
+      if (from < 2) {
+        await migrator.addColumn(
+          maintenanceRecords,
+          maintenanceRecords.serviceTitle,
+        );
+      }
+      if (from < 3) {
+        await migrator.addColumn(
+          serviceReminders,
+          serviceReminders.completedAt,
+        );
+        await migrator.addColumn(
+          serviceReminders,
+          serviceReminders.lastMileageNotificationPercent,
+        );
+      }
+      if (from < 4) {
+        await migrator.addColumn(vehicles, vehicles.startingOdometerKm);
+        await migrator.addColumn(vehicles, vehicles.photoPath);
+      }
     },
     beforeOpen: (_) async {
       await customStatement('PRAGMA foreign_keys = ON');

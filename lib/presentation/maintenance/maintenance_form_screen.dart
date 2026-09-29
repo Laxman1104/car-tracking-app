@@ -42,6 +42,7 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _odometer = TextEditingController();
   final _workshop = TextEditingController();
+  final _serviceTitle = TextEditingController();
   final _totalCost = TextEditingController(text: '0.00');
   final _notes = TextEditingController();
   final _nextOdometer = TextEditingController();
@@ -69,6 +70,7 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
       _category = record.category;
       _odometer.text = record.odometerKm.toString();
       _workshop.text = record.workshop ?? '';
+      _serviceTitle.text = record.serviceTitle ?? '';
       _totalCost.text = decimalFromScaled(record.totalCostSen, 2);
       _notes.text = record.notes ?? '';
       _items.addAll(
@@ -92,6 +94,7 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
   void dispose() {
     _odometer.dispose();
     _workshop.dispose();
+    _serviceTitle.dispose();
     _totalCost.dispose();
     _notes.dispose();
     _nextOdometer.dispose();
@@ -138,6 +141,19 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
               }),
             ),
             const SizedBox(height: 22),
+            if (_category == MaintenanceCategory.service) ...[
+              const _Label('SERVICE / REMINDER TITLE'),
+              const SizedBox(height: 8),
+              TextFormField(
+                key: const Key('maintenance-service-title'),
+                controller: _serviceTitle,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.label_outline),
+                  hintText: 'e.g. General Service or Tyre Rotation',
+                ),
+              ),
+              const SizedBox(height: 22),
+            ],
             const _Label('ODOMETER *'),
             const SizedBox(height: 8),
             TextFormField(
@@ -397,93 +413,24 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
 
   Future<void> _editItem(int? index) async {
     final existing = index == null ? null : _items[index];
-    final name = TextEditingController(text: existing?.name);
-    final description = TextEditingController(text: existing?.description);
-    final cost = TextEditingController(
-      text: decimalFromScaled(existing?.costSen ?? 0, 2),
-    );
-    final result = await showDialog<MaintenanceItemInput>(
+    final result = await showModalBottomSheet<_MaintenanceItemEditorResult>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(index == null ? 'Add line item' : 'Edit line item'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                key: const Key('maintenance-item-name'),
-                controller: name,
-                decoration: const InputDecoration(labelText: 'Item name'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                key: const Key('maintenance-item-description'),
-                controller: description,
-                decoration: const InputDecoration(
-                  labelText: 'Action / description',
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                key: const Key('maintenance-item-cost'),
-                controller: cost,
-                keyboardType: TextInputType.number,
-                inputFormatters: const [FixedDecimalInputFormatter()],
-                decoration: const InputDecoration(
-                  labelText: 'Cost',
-                  prefixText: 'RM ',
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          if (index != null)
-            TextButton(
-              onPressed: () => Navigator.pop(
-                context,
-                const MaintenanceItemInput(name: '', costSen: -1),
-              ),
-              child: const Text('Remove'),
-            ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final parsed = ScaledDecimalParser.parse(
-                cost.text,
-                fractionDigits: 2,
-              );
-              if (name.text.trim().isEmpty || parsed == null) return;
-              Navigator.pop(
-                context,
-                MaintenanceItemInput(
-                  name: name.text.trim(),
-                  description: description.text.trim().isEmpty
-                      ? null
-                      : description.text.trim(),
-                  costSen: parsed,
-                ),
-              );
-            },
-            child: const Text('Done'),
-          ),
-        ],
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _MaintenanceItemEditorSheet(
+        existing: existing,
+        canRemove: index != null,
       ),
     );
-    name.dispose();
-    description.dispose();
-    cost.dispose();
     if (!mounted || result == null) return;
     setState(() {
-      if (result.costSen < 0) {
+      if (result.remove) {
         _items.removeAt(index!);
       } else if (index == null) {
-        _items.add(result);
+        _items.add(result.item!);
       } else {
-        _items[index] = result;
+        _items[index] = result.item!;
       }
     });
   }
@@ -592,6 +539,9 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
           fractionDigits: 2,
         )!,
         items: List.unmodifiable(_items),
+        serviceTitle: _category == MaintenanceCategory.service
+            ? _serviceTitle.text
+            : null,
         notes: _notes.text,
         nextServiceDate: _category == MaintenanceCategory.service
             ? _nextServiceDate
@@ -677,3 +627,213 @@ class _AttachmentTile extends StatelessWidget {
 }
 
 enum _ItemAction { edit, moveUp, moveDown, remove }
+
+class _MaintenanceItemEditorResult {
+  const _MaintenanceItemEditorResult.save(this.item) : remove = false;
+  const _MaintenanceItemEditorResult.remove() : item = null, remove = true;
+
+  final MaintenanceItemInput? item;
+  final bool remove;
+}
+
+class _MaintenanceItemEditorSheet extends StatefulWidget {
+  const _MaintenanceItemEditorSheet({
+    required this.existing,
+    required this.canRemove,
+  });
+
+  final MaintenanceItemInput? existing;
+  final bool canRemove;
+
+  @override
+  State<_MaintenanceItemEditorSheet> createState() =>
+      _MaintenanceItemEditorSheetState();
+}
+
+class _MaintenanceItemEditorSheetState
+    extends State<_MaintenanceItemEditorSheet> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _name;
+  late final TextEditingController _description;
+  late final TextEditingController _cost;
+
+  @override
+  void initState() {
+    super.initState();
+    _name = TextEditingController(text: widget.existing?.name);
+    _description = TextEditingController(text: widget.existing?.description);
+    _cost = TextEditingController(
+      text: decimalFromScaled(widget.existing?.costSen ?? 0, 2),
+    );
+  }
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _description.dispose();
+    _cost.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    if (!_formKey.currentState!.validate()) return;
+    final description = _description.text.trim();
+    Navigator.pop(
+      context,
+      _MaintenanceItemEditorResult.save(
+        MaintenanceItemInput(
+          name: _name.text.trim(),
+          description: description.isEmpty ? null : description,
+          costSen: ScaledDecimalParser.parse(_cost.text, fractionDigits: 2)!,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final availableHeight =
+        media.size.height - media.viewInsets.bottom - media.padding.top - 16;
+    final maxHeight = availableHeight.clamp(0.0, media.size.height * 0.82);
+
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
+      child: Material(
+        color: AppColors.surface,
+        clipBehavior: Clip.antiAlias,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxHeight),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 10),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 8, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          widget.existing == null
+                              ? 'Add line item'
+                              : 'Edit line item',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Close',
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                ),
+                Flexible(
+                  child: SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          key: const Key('maintenance-item-name'),
+                          controller: _name,
+                          textInputAction: TextInputAction.next,
+                          autofocus: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Item name',
+                            hintText: 'e.g. Engine oil',
+                          ),
+                          validator: (value) =>
+                              value == null || value.trim().isEmpty
+                              ? 'Enter an item name.'
+                              : null,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          key: const Key('maintenance-item-description'),
+                          controller: _description,
+                          textInputAction: TextInputAction.next,
+                          decoration: const InputDecoration(
+                            labelText: 'Action / description',
+                            hintText: 'Optional details',
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          key: const Key('maintenance-item-cost'),
+                          controller: _cost,
+                          keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.done,
+                          inputFormatters: const [FixedDecimalInputFormatter()],
+                          onFieldSubmitted: (_) => _save(),
+                          decoration: const InputDecoration(
+                            labelText: 'Cost',
+                            prefixText: 'RM ',
+                          ),
+                          validator: (value) =>
+                              ScaledDecimalParser.parse(
+                                    value ?? '',
+                                    fractionDigits: 2,
+                                  ) ==
+                                  null
+                              ? 'Enter a valid cost.'
+                              : null,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                DecoratedBox(
+                  decoration: const BoxDecoration(
+                    border: Border(top: BorderSide(color: AppColors.border)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                    child: Row(
+                      children: [
+                        if (widget.canRemove)
+                          TextButton.icon(
+                            onPressed: () => Navigator.pop(
+                              context,
+                              const _MaintenanceItemEditorResult.remove(),
+                            ),
+                            icon: const Icon(Icons.delete_outline),
+                            label: const Text('Remove'),
+                          ),
+                        if (widget.canRemove) const SizedBox(width: 8),
+                        Expanded(
+                          child: FilledButton(
+                            key: const Key('save-maintenance-item'),
+                            onPressed: _save,
+                            child: const Text('Done'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

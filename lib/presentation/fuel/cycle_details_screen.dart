@@ -74,6 +74,28 @@ class CycleDetailsScreen extends StatelessWidget {
                     },
             );
           }),
+          const SizedBox(height: 18),
+          const Card(
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: EdgeInsets.all(14),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info_outline, color: AppColors.textSecondary),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Completed cycles are calculated from their Fuel Events '
+                      'and cannot be deleted directly. Edit or delete an event '
+                      'above and the affected cycles will rebuild automatically.',
+                      style: TextStyle(color: AppColors.textSecondary),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -455,6 +477,18 @@ class _FuelEventTimelineRow extends StatelessWidget {
                             ],
                           ),
                         ),
+                        if (onTap != null) ...[
+                          const SizedBox(height: 10),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton.icon(
+                              key: Key('edit-cycle-event-${event.id}'),
+                              onPressed: onTap,
+                              icon: const Icon(Icons.edit_outlined, size: 17),
+                              label: const Text('Edit fuel event'),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

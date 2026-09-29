@@ -34,8 +34,12 @@ void main() {
 
   tearDown(() => database.close());
 
-  Future<void> pump(WidgetTester tester, {MaintenanceSaved? onSaved}) async {
-    tester.view.physicalSize = const Size(900, 1800);
+  Future<void> pump(
+    WidgetTester tester, {
+    MaintenanceSaved? onSaved,
+    Size size = const Size(900, 1800),
+  }) async {
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -94,6 +98,44 @@ void main() {
     await tester.tap(find.text('Accessories'));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('next-service-odometer')), findsNothing);
+  });
+
+  testWidgets('line item editor saves cleanly after keyboard entry', (
+    tester,
+  ) async {
+    await pump(tester, size: const Size(412, 915));
+
+    final addItem = find.byKey(const Key('add-maintenance-item'));
+    await tester.ensureVisible(addItem);
+    await tester.tap(addItem);
+    await tester.pumpAndSettle();
+
+    tester.view.viewInsets = const FakeViewPadding(bottom: 320);
+    addTearDown(tester.view.resetViewInsets);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Add line item'), findsAtLeastNWidgets(1));
+    await tester.enterText(
+      find.byKey(const Key('maintenance-item-name')),
+      'Engine oil',
+    );
+    await tester.enterText(
+      find.byKey(const Key('maintenance-item-description')),
+      'Replaced',
+    );
+    await tester.enterText(
+      find.byKey(const Key('maintenance-item-cost')),
+      '18000',
+    );
+
+    final done = find.byKey(const Key('save-maintenance-item'));
+    await tester.ensureVisible(done);
+    await tester.tap(done);
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Engine oil'), findsOneWidget);
+    expect(find.text('RM180.00'), findsOneWidget);
   });
 }
 
