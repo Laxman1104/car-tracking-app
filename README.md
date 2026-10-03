@@ -22,7 +22,7 @@ A private-first Android app for tracking fuel usage, maintenance, service remind
 
 ## Download
 
-[**Download the latest Android APK**](https://github.com/Laxman1104/car-tracking-app/releases/latest/download/CarTracker-1.0.1-personal.apk)
+[**Download the latest Android APK**](https://github.com/Laxman1104/car-tracking-app/releases/latest/download/CarTracker-1.0.0-personal.apk)
 
 Open the APK on your Android phone and allow installation from that browser or file manager if Android prompts you. Back up your app data before replacing or reinstalling the application.
 
