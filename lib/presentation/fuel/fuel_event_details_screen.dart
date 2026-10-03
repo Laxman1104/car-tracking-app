@@ -4,6 +4,7 @@ import '../../application/fuel/create_fuel_event.dart';
 import '../../application/fuel/delete_fuel_event.dart';
 import '../../application/fuel/update_fuel_event.dart';
 import '../../domain/fuel/fuel_cycle.dart';
+import '../../domain/odometer/odometer_value.dart';
 import '../theme/app_theme.dart';
 import 'fuel_event_form_screen.dart';
 import 'fuel_formatters.dart';
@@ -62,7 +63,10 @@ class FuelEventDetailsScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  _Value(label: 'ODOMETER', value: '${event.odometerKm} km'),
+                  _Value(
+                    label: 'ODOMETER',
+                    value: '${formatOdometerKm(event.odometerKm)} km',
+                  ),
                   _Value(
                     label: 'FUEL ADDED',
                     value:

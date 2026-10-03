@@ -8,6 +8,7 @@ import 'package:excel_plus/excel_plus.dart';
 import 'package:path/path.dart' as p;
 
 import '../../data/database/app_database.dart';
+import '../../domain/odometer/odometer_value.dart';
 import '../../data/mappers/history_mappers.dart';
 import '../../domain/fuel/fuel_cycle.dart';
 import '../maintenance/maintenance_record_service.dart';
@@ -78,7 +79,8 @@ class DataPortabilityService {
       final bytes = await File(source).readAsBytes();
       final folder =
           '${_dateStamp(record.occurredAt)}_'
-          '${record.odometerKm}km_${record.category.name}';
+          '${formatOdometerKm(record.odometerKm, grouped: false)}km_'
+          '${record.category.name}';
       final name =
           'Receipts/${_safeName(folder)}/${_safeName(attachment.originalFileName)}';
       archive.addFile(ArchiveFile(name, bytes.length, bytes));

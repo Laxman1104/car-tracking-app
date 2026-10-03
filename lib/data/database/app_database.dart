@@ -22,7 +22,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -53,6 +53,44 @@ class AppDatabase extends _$AppDatabase {
       if (from < 4) {
         await migrator.addColumn(vehicles, vehicles.startingOdometerKm);
         await migrator.addColumn(vehicles, vehicles.photoPath);
+      }
+      if (from < 5) {
+        await migrator.alterTable(
+          TableMigration(
+            serviceReminders,
+            columnTransformer: {
+              serviceReminders.targetOdometerKm: serviceReminders
+                  .targetOdometerKm
+                  .cast<double>(),
+            },
+          ),
+        );
+        await migrator.alterTable(
+          TableMigration(
+            fuelEvents,
+            columnTransformer: {
+              fuelEvents.odometerKm: fuelEvents.odometerKm.cast<double>(),
+            },
+          ),
+        );
+        await migrator.alterTable(
+          TableMigration(
+            maintenanceRecords,
+            columnTransformer: {
+              maintenanceRecords.odometerKm: maintenanceRecords.odometerKm
+                  .cast<double>(),
+            },
+          ),
+        );
+        await migrator.alterTable(
+          TableMigration(
+            vehicles,
+            columnTransformer: {
+              vehicles.startingOdometerKm: vehicles.startingOdometerKm
+                  .cast<double>(),
+            },
+          ),
+        );
       }
     },
     beforeOpen: (_) async {

@@ -30,7 +30,7 @@ void main() {
 
   FuelEventInput input({
     DateTime? occurredAt,
-    int odometerKm = 10240,
+    double odometerKm = 10240,
     int volumeMl = 32400,
     int costSen = 6800,
     bool isFullTank = true,
@@ -110,7 +110,7 @@ void main() {
             .having(
               (error) => error.message,
               'message',
-              contains('must not exceed 10250 km'),
+              contains('must not exceed 10,250.0 km'),
             ),
       ),
     );

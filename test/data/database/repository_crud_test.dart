@@ -137,9 +137,9 @@ void main() {
       () async {
         final vehicleId = await createVehicle();
         for (final event in [
-          (DateTime.utc(2027, 9, 12), 10250),
-          (DateTime.utc(2027, 9, 10), 10000),
-          (DateTime.utc(2027, 9, 11), 10120),
+          (DateTime.utc(2027, 9, 12), 10250.0),
+          (DateTime.utc(2027, 9, 10), 10000.0),
+          (DateTime.utc(2027, 9, 11), 10120.0),
         ]) {
           await fuelEvents.create(
             FuelEventsCompanion.insert(

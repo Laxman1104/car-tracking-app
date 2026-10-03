@@ -35,7 +35,7 @@ class DomainValidator {
   final OdometerTimelineEngine odometerTimelineEngine;
 
   FuelValueValidation validateFuelValues({
-    required int odometerKm,
+    required double odometerKm,
     required int fuelVolumeMillilitres,
     required int costSen,
   }) {
@@ -57,7 +57,7 @@ class DomainValidator {
   }
 
   MaintenanceValueValidation validateMaintenanceValues({
-    required int odometerKm,
+    required double odometerKm,
     required int totalCostSen,
   }) {
     final issues = <DomainValidationIssue>{};
@@ -92,11 +92,11 @@ class DomainValidator {
 
   /// Returns the absolute Trip B difference in metres, or null when omitted.
   int? absoluteTripDifferenceMetres({
-    required int odometerDistanceKm,
+    required double odometerDistanceKm,
     required int? tripDistanceMetres,
   }) {
     if (tripDistanceMetres == null) return null;
-    final odometerDistanceMetres = odometerDistanceKm * 1000;
+    final odometerDistanceMetres = (odometerDistanceKm * 1000).round();
     return (tripDistanceMetres - odometerDistanceMetres).abs();
   }
 }

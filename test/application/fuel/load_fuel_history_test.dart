@@ -17,13 +17,12 @@ void main() {
       maintenance: MaintenanceRepository(database),
     );
     final load = LoadFuelHistory(fuelEvents: repository);
-    final vehicleId = await VehicleRepository(database).create(
-      VehiclesCompanion.insert(displayName: 'Synthetic Test Car'),
-    );
+    final vehicleId = await VehicleRepository(database)
+        .create(VehiclesCompanion.insert(displayName: 'Synthetic Test Car'));
 
     Future<void> add({
       required int day,
-      required int odometer,
+      required double odometer,
       required int litres,
       required bool full,
     }) async {

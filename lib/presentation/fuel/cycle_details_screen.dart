@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/fuel/fuel_cycle.dart';
+import '../../domain/odometer/odometer_value.dart';
 import '../theme/app_theme.dart';
 import 'fuel_brand_assets.dart';
 import 'fuel_formatters.dart';
@@ -155,7 +156,7 @@ class _CycleSummary extends StatelessWidget {
     return Semantics(
       container: true,
       label:
-          'Cycle summary. ${cycle.distanceKm} kilometres, '
+          'Cycle summary. ${formatOdometerKm(cycle.distanceKm)} kilometres, '
           '${formatLitresFromMillilitres(cycle.fuelConsumedMillilitres)} litres, '
           '${formatEfficiency(cycle.fuelEfficiencyKmPerL)} kilometres per litre, '
           '${formatRinggitFromSen(cycle.fuelCostSen)}.',
@@ -185,8 +186,8 @@ class _CycleSummary extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  'Range: ${cycle.openingFull.odometerKm} km → '
-                  '${cycle.closingFull.odometerKm} km',
+                  'Range: ${formatOdometerKm(cycle.openingFull.odometerKm)} km → '
+                  '${formatOdometerKm(cycle.closingFull.odometerKm)} km',
                   style: const TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 11,
@@ -199,7 +200,7 @@ class _CycleSummary extends StatelessWidget {
                   Expanded(
                     child: _SummaryMetric(
                       label: 'DISTANCE',
-                      value: '${cycle.distanceKm}',
+                      value: formatOdometerKm(cycle.distanceKm),
                       unit: 'km',
                     ),
                   ),
@@ -374,7 +375,7 @@ class _FuelEventTimelineRow extends StatelessWidget {
     return Semantics(
       container: true,
       label:
-          '$role, ${event.fuelBrand}, ${event.odometerKm} kilometres, '
+          '$role, ${event.fuelBrand}, ${formatOdometerKm(event.odometerKm)} kilometres, '
           '${formatLitresFromMillilitres(event.fuelVolumeMillilitres)} litres, '
           '${formatRinggitFromSen(event.costSen)}',
       child: IntrinsicHeight(
@@ -463,7 +464,8 @@ class _FuelEventTimelineRow extends StatelessWidget {
                               Expanded(
                                 child: _EventValue(
                                   label: 'ODOMETER',
-                                  value: '${event.odometerKm} km',
+                                  value:
+                                      '${formatOdometerKm(event.odometerKm)} km',
                                 ),
                               ),
                               Expanded(

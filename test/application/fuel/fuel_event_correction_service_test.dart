@@ -32,17 +32,18 @@ void main() {
 
   tearDown(() => database.close());
 
-  Future<int> add(int day, int odometer, int ml, int sen, bool full) => create(
-    FuelEventInput(
-      vehicleId: vehicleId,
-      occurredAt: DateTime.utc(2027, 1, day),
-      odometerKm: odometer,
-      fuelBrand: 'PETRONAS',
-      fuelVolumeMillilitres: ml,
-      costSen: sen,
-      isFullTank: full,
-    ),
-  );
+  Future<int> add(int day, double odometer, int ml, int sen, bool full) =>
+      create(
+        FuelEventInput(
+          vehicleId: vehicleId,
+          occurredAt: DateTime.utc(2027, 1, day),
+          odometerKm: odometer,
+          fuelBrand: 'PETRONAS',
+          fuelVolumeMillilitres: ml,
+          costSen: sen,
+          isFullTank: full,
+        ),
+      );
 
   test('editing a partial recalculates its completed cycle', () async {
     await add(1, 10000, 40000, 7000, true);

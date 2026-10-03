@@ -13,7 +13,7 @@ class MaintenanceAnalyticsRecord {
 
   final int id;
   final DateTime occurredAt;
-  final int odometerKm;
+  final double odometerKm;
   final MaintenanceCategory category;
   final int costSen;
   final String? workshop;
@@ -44,7 +44,7 @@ class MonthlyFuelEfficiency {
 
   final int year;
   final int month;
-  final int distanceKm;
+  final double distanceKm;
   final int fuelMillilitres;
   double? get kmPerL => distanceKm == 0 || fuelMillilitres == 0
       ? null
@@ -61,7 +61,7 @@ class BrandEfficiencySummary {
 
   final String brand;
   final int cycleCount;
-  final int distanceKm;
+  final double distanceKm;
   final int fuelMillilitres;
   double? get kmPerL => distanceKm == 0 || fuelMillilitres == 0
       ? null
@@ -93,7 +93,7 @@ class UpcomingServiceReminder {
   final int maintenanceRecordId;
   final String title;
   final DateTime? targetDate;
-  final int? targetOdometerKm;
+  final double? targetOdometerKm;
 }
 
 class CarAnalytics {
@@ -126,7 +126,7 @@ class CarAnalytics {
   final int totalFuelMillilitres;
   final int totalFuelCostSen;
   final int totalMaintenanceCostSen;
-  final int? trackedDistanceKm;
+  final double? trackedDistanceKm;
   final List<MonthlySpending> monthlySpending;
   final List<MonthlyFuelEfficiency> monthlyFuelEfficiency;
   final List<BrandEfficiencySummary> brandEfficiency;
@@ -134,8 +134,8 @@ class CarAnalytics {
   final List<UpcomingServiceReminder> upcomingServiceReminders;
 
   int get fillCount => fuelEvents.length;
-  int get completedCycleDistanceKm =>
-      completedCycles.fold(0, (sum, cycle) => sum + cycle.distanceKm);
+  double get completedCycleDistanceKm =>
+      completedCycles.fold(0.0, (sum, cycle) => sum + cycle.distanceKm);
   int get completedCycleFuelCostSen =>
       completedCycles.fold(0, (sum, cycle) => sum + cycle.fuelCostSen);
   int get maintenanceRecordCount => maintenanceRecords.length;
@@ -198,7 +198,10 @@ class CarAnalyticsEngine {
 
   double? _weightedEfficiency(Iterable<CompletedFuelCycle> cycles) {
     final valid = cycles.where((cycle) => cycle.distanceKm > 0);
-    final distance = valid.fold<int>(0, (sum, cycle) => sum + cycle.distanceKm);
+    final distance = valid.fold<double>(
+      0,
+      (sum, cycle) => sum + cycle.distanceKm,
+    );
     final fuel = valid.fold<int>(
       0,
       (sum, cycle) => sum + cycle.fuelConsumedMillilitres,
@@ -208,12 +211,15 @@ class CarAnalyticsEngine {
 
   double? _costPerKm(Iterable<CompletedFuelCycle> cycles) {
     final valid = cycles.where((cycle) => cycle.distanceKm > 0);
-    final distance = valid.fold<int>(0, (sum, cycle) => sum + cycle.distanceKm);
+    final distance = valid.fold<double>(
+      0,
+      (sum, cycle) => sum + cycle.distanceKm,
+    );
     final cost = valid.fold<int>(0, (sum, cycle) => sum + cycle.fuelCostSen);
     return distance == 0 ? null : cost / 100 / distance;
   }
 
-  int? _trackedDistance(
+  double? _trackedDistance(
     List<FuelEventSnapshot> fuel,
     List<MaintenanceAnalyticsRecord> maintenance,
   ) {
@@ -261,11 +267,11 @@ class CarAnalyticsEngine {
   List<MonthlyFuelEfficiency> _monthlyEfficiency(
     List<CompletedFuelCycle> cycles,
   ) {
-    final values = <(int, int), (int, int)>{};
+    final values = <(int, int), (double, int)>{};
     for (final cycle in cycles.where((entry) => entry.distanceKm > 0)) {
       final date = cycle.closingFull.occurredAt;
       final key = (date.year, date.month);
-      final old = values[key] ?? (0, 0);
+      final old = values[key] ?? (0.0, 0);
       values[key] = (
         old.$1 + cycle.distanceKm,
         old.$2 + cycle.fuelConsumedMillilitres,
@@ -290,7 +296,7 @@ class CarAnalyticsEngine {
   List<BrandEfficiencySummary> _brandEfficiency(
     List<CompletedFuelCycle> cycles,
   ) {
-    final values = <String, (int, int, int)>{};
+    final values = <String, (int, double, int)>{};
     for (final cycle in cycles.where(
       (entry) =>
           entry.brandKind == FuelCycleBrandKind.singleBrand &&
@@ -298,7 +304,7 @@ class CarAnalyticsEngine {
           entry.distanceKm > 0,
     )) {
       final brand = cycle.attributedBrand!;
-      final old = values[brand] ?? (0, 0, 0);
+      final old = values[brand] ?? (0, 0.0, 0);
       values[brand] = (
         old.$1 + 1,
         old.$2 + cycle.distanceKm,

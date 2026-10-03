@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/database/app_database.dart';
 import '../../data/repositories/vehicle_repository.dart';
+import '../../domain/odometer/odometer_value.dart';
 import '../theme/app_theme.dart';
 import 'vehicle_setup_screen.dart';
 
@@ -75,7 +76,7 @@ class _VehicleLifecycleScreenState extends State<VehicleLifecycleScreen> {
             ),
             subtitle: Text(
               'Starting odometer: '
-              '${widget.currentVehicle.startingOdometerKm} km',
+              '${formatOdometerKm(widget.currentVehicle.startingOdometerKm)} km',
             ),
           ),
         ),

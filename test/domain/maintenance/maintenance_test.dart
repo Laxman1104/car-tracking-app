@@ -8,7 +8,7 @@ void main() {
     MaintenanceCategory category = MaintenanceCategory.service,
     List<MaintenanceItemInput> items = const [],
     DateTime? targetDate,
-    int? targetOdometerKm,
+    double? targetOdometerKm,
   }) {
     return service.buildPlan(
       vehicleId: 1,

@@ -50,10 +50,10 @@ void main() {
     int costSen = 0,
     List<MaintenanceItemInput> items = const [],
     DateTime? nextDate,
-    int? nextOdometer,
+    double? nextOdometer,
     List<MaintenanceAttachmentInput> newAttachments = const [],
     Set<int> retained = const {},
-    int odometer = 10240,
+    double odometer = 10240,
     DateTime? occurredAt,
   }) => MaintenanceRecordInput(
     vehicleId: vehicleId,
@@ -248,7 +248,7 @@ void main() {
         onOdometerUpdated: service.reconcileReminders,
       );
 
-      Future<void> log(int odometer, int day) async {
+      Future<void> log(double odometer, int day) async {
         await createFuel(
           FuelEventInput(
             vehicleId: vehicleId,
@@ -363,8 +363,8 @@ class _FakeScheduler implements ServiceReminderScheduler {
     required int maintenanceRecordId,
     required String title,
     required int stagePercent,
-    required int currentOdometerKm,
-    required int targetOdometerKm,
+    required double currentOdometerKm,
+    required double targetOdometerKm,
   }) async => mileageStages[maintenanceRecordId] = stagePercent;
 }
 
@@ -387,7 +387,7 @@ class _ThrowingScheduler implements ServiceReminderScheduler {
     required int maintenanceRecordId,
     required String title,
     required int stagePercent,
-    required int currentOdometerKm,
-    required int targetOdometerKm,
+    required double currentOdometerKm,
+    required double targetOdometerKm,
   }) => Future.error(StateError('Notifications unavailable'));
 }

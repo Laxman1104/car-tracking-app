@@ -22,8 +22,8 @@ class Vehicles extends AuditedTable {
   TextColumn get registrationNumber =>
       text().withLength(min: 1, max: 32).nullable()();
 
-  IntColumn get startingOdometerKm =>
-      integer().withDefault(const Constant(0))();
+  RealColumn get startingOdometerKm =>
+      real().withDefault(const Constant(0.0))();
 
   TextColumn get photoPath => text().nullable()();
 
@@ -54,7 +54,7 @@ class FuelEvents extends AuditedTable {
 
   DateTimeColumn get occurredAt => dateTime()();
 
-  IntColumn get odometerKm => integer()();
+  RealColumn get odometerKm => real()();
 
   TextColumn get fuelBrand => text().withLength(min: 1, max: 80)();
 
@@ -94,7 +94,7 @@ class MaintenanceRecords extends AuditedTable {
 
   DateTimeColumn get occurredAt => dateTime()();
 
-  IntColumn get odometerKm => integer()();
+  RealColumn get odometerKm => real()();
 
   TextColumn get category => textEnum<MaintenanceCategory>()();
 
@@ -198,7 +198,7 @@ class ServiceReminders extends AuditedTable {
 
   DateTimeColumn get targetDate => dateTime().nullable()();
 
-  IntColumn get targetOdometerKm => integer().nullable()();
+  RealColumn get targetOdometerKm => real().nullable()();
 
   DateTimeColumn get completedAt => dateTime().nullable()();
 

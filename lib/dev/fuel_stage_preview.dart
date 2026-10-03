@@ -42,9 +42,9 @@ class _FuelStagePreviewAppState extends State<FuelStagePreviewApp> {
         .create(VehiclesCompanion.insert(displayName: 'Stage 2 Preview Car'));
     final now = DateTime.now();
     final fixtures = [
-      (14, 10000, 'PETRONAS', 40000, 7000, true),
-      (7, 10200, 'Shell', 12000, 3000, false),
-      (1, 10450, 'Petron', 18000, 3600, true),
+      (14, 10000.0, 'PETRONAS', 40000, 7000, true),
+      (7, 10200.0, 'Shell', 12000, 3000, false),
+      (1, 10450.0, 'Petron', 18000, 3600, true),
     ];
     for (final fixture in fixtures) {
       await _saveFuel(

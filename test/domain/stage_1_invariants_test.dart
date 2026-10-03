@@ -11,7 +11,7 @@ void main() {
 
     for (var sample = 0; sample < 250; sample++) {
       var id = 1;
-      var odometer = random.nextInt(10000);
+      var odometer = random.nextInt(10000).toDouble();
       var openingBrand = _brands[random.nextInt(_brands.length)];
       final events = <FuelEventSnapshot>[
         _fuel(
@@ -121,7 +121,7 @@ void main() {
       const engine = OdometerTimelineEngine();
 
       for (var sample = 0; sample < 100; sample++) {
-        var odometer = random.nextInt(10000);
+        var odometer = random.nextInt(10000).toDouble();
         final chronological = <OdometerObservation>[];
         for (var index = 0; index < 30; index++) {
           odometer += random.nextInt(51);
@@ -161,7 +161,7 @@ const _brands = ['PETRONAS', 'Shell', 'Petron', 'Caltex', 'BHPetrol'];
 
 FuelEventSnapshot _fuel({
   required int id,
-  required int odometerKm,
+  required double odometerKm,
   required int volumeMl,
   required int costSen,
   required bool full,
@@ -188,7 +188,7 @@ class _ExpectedCycle {
     required this.attributedBrand,
   });
 
-  final int distanceKm;
+  final double distanceKm;
   final int volumeMl;
   final int costSen;
   final bool mixed;

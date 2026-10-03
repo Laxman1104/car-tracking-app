@@ -7,7 +7,7 @@ void main() {
 
   FuelEventSnapshot event({
     required int id,
-    required int odometerKm,
+    required double odometerKm,
     required int volumeMl,
     required bool full,
   }) {

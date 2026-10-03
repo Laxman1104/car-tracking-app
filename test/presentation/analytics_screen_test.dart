@@ -59,7 +59,7 @@ void main() {
 FuelEventSnapshot _event(
   int id,
   DateTime occurredAt,
-  int odometerKm,
+  double odometerKm,
   int millilitres,
   int costSen,
 ) => FuelEventSnapshot(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/fuel/fuel_cycle.dart';
+import '../../domain/odometer/odometer_value.dart';
 import '../theme/app_theme.dart';
 import 'fuel_brand_assets.dart';
 import 'fuel_formatters.dart';
@@ -249,7 +250,7 @@ class _PendingCycleCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: _PendingMetric(
-                    value: '${pending.openingFull.odometerKm}',
+                    value: formatOdometerKm(pending.openingFull.odometerKm),
                     label: 'STARTED (KM)',
                   ),
                 ),
@@ -289,7 +290,7 @@ class _PendingCycleCard extends StatelessWidget {
                   event.isFullTank ? 'Start Full' : 'Not Full · Partial',
                 ),
                 subtitle: Text(
-                  '${event.odometerKm} km · '
+                  '${formatOdometerKm(event.odometerKm)} km · '
                   '${formatLitresFromMillilitres(event.fuelVolumeMillilitres)} L',
                 ),
                 trailing: const Icon(Icons.edit_outlined, size: 18),
@@ -364,7 +365,7 @@ class _CompletedCycleCard extends StatelessWidget {
       button: true,
       label:
           'Calculated fuel cycle $cycleNumber, $brand, '
-          '${cycle.distanceKm} kilometres, '
+          '${formatOdometerKm(cycle.distanceKm)} kilometres, '
           '${formatEfficiency(cycle.fuelEfficiencyKmPerL)} kilometres per litre',
       child: Card(
         key: Key('completed-cycle-$cycleNumber'),
@@ -445,7 +446,7 @@ class _CompletedCycleCard extends StatelessWidget {
                       Expanded(
                         child: _CycleMetric(
                           label: 'DISTANCE',
-                          value: '${cycle.distanceKm}',
+                          value: formatOdometerKm(cycle.distanceKm),
                           unit: 'km',
                         ),
                       ),
@@ -693,7 +694,7 @@ class _AwaitingStartingReferenceCard extends StatelessWidget {
             .map(
               (event) => ListTile(
                 title: Text('${event.fuelBrand} · Not Full'),
-                subtitle: Text('${event.odometerKm} km'),
+                subtitle: Text('${formatOdometerKm(event.odometerKm)} km'),
                 trailing: const Icon(Icons.edit_outlined),
                 onTap: () => onEventTap(event),
               ),

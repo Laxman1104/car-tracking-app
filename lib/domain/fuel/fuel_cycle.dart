@@ -16,7 +16,7 @@ class FuelEventSnapshot {
   final int id;
   final int vehicleId;
   final DateTime occurredAt;
-  final int odometerKm;
+  final double odometerKm;
   final String fuelBrand;
   final int fuelVolumeMillilitres;
   final int costSen;
@@ -41,7 +41,7 @@ class CompletedFuelCycle {
 
   /// Includes the opening Full, intermediate Not Full events, and closing Full.
   final List<FuelEventSnapshot> events;
-  final int distanceKm;
+  final double distanceKm;
   final int fuelConsumedMillilitres;
   final int fuelCostSen;
   final FuelCycleBrandKind brandKind;

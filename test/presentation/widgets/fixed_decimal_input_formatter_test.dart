@@ -31,4 +31,23 @@ void main() {
     );
     expect(value.text, '3.45');
   });
+
+  test('odometer mode keeps exactly one decimal place', () {
+    const formatter = FixedDecimalInputFormatter(decimalPlaces: 1);
+    var value = const TextEditingValue(text: '0.0');
+
+    for (final expected in ['0.4', '4.6', '46.3', '463.8']) {
+      final digit = switch (expected) {
+        '0.4' => '4',
+        '4.6' => '6',
+        '46.3' => '3',
+        _ => '8',
+      };
+      value = formatter.formatEditUpdate(
+        value,
+        TextEditingValue(text: '${value.text}$digit'),
+      );
+      expect(value.text, expected);
+    }
+  });
 }

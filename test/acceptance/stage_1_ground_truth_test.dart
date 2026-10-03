@@ -24,7 +24,7 @@ void main() {
 
   FuelEventSnapshot fuel({
     required int id,
-    required int odometerKm,
+    required double odometerKm,
     required int volumeMl,
     required int costSen,
     required bool full,
@@ -49,7 +49,7 @@ void main() {
     required OdometerSource source,
     required int id,
     required int day,
-    required int odometerKm,
+    required double odometerKm,
   }) {
     return OdometerObservation(
       key: OdometerObservationKey(source, id),

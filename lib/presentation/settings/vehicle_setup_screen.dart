@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
+import '../../domain/odometer/odometer_value.dart';
 import '../theme/app_theme.dart';
+import '../widgets/fixed_decimal_input_formatter.dart';
 
 class VehicleSetupData {
   const VehicleSetupData({
@@ -11,7 +12,7 @@ class VehicleSetupData {
   });
 
   final String name;
-  final int startingOdometerKm;
+  final double startingOdometerKm;
   final String? registrationNumber;
 }
 
@@ -108,7 +109,7 @@ class _VehicleSetupFormState extends State<VehicleSetupForm> {
   final _form = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _registration = TextEditingController();
-  final _odometer = TextEditingController();
+  final _odometer = TextEditingController(text: '0.0');
 
   @override
   void dispose() {
@@ -144,15 +145,15 @@ class _VehicleSetupFormState extends State<VehicleSetupForm> {
         TextFormField(
           key: const Key('new-vehicle-odometer'),
           controller: _odometer,
-          keyboardType: TextInputType.number,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           textInputAction: TextInputAction.next,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          inputFormatters: const [FixedDecimalInputFormatter(decimalPlaces: 1)],
           decoration: const InputDecoration(
             labelText: 'Current odometer',
             suffixText: 'km',
           ),
           validator: (value) {
-            final parsed = int.tryParse(value ?? '');
+            final parsed = parseOdometerKm(value ?? '');
             return parsed == null || parsed < 0
                 ? 'Enter a valid odometer'
                 : null;
@@ -207,7 +208,7 @@ class _VehicleSetupFormState extends State<VehicleSetupForm> {
     widget.onSubmit(
       VehicleSetupData(
         name: _name.text.trim(),
-        startingOdometerKm: int.parse(_odometer.text),
+        startingOdometerKm: parseOdometerKm(_odometer.text)!,
         registrationNumber: registration.isEmpty ? null : registration,
       ),
     );

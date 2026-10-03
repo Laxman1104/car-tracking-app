@@ -1,11 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import '../../domain/odometer/odometer_value.dart';
+
 abstract interface class ServiceCalendarLauncher {
   Future<void> addServiceReminder({
     required String title,
     required DateTime targetDate,
-    int? targetOdometerKm,
+    double? targetOdometerKm,
   });
 }
 
@@ -18,7 +20,7 @@ class PlatformServiceCalendarLauncher implements ServiceCalendarLauncher {
   Future<void> addServiceReminder({
     required String title,
     required DateTime targetDate,
-    int? targetOdometerKm,
+    double? targetOdometerKm,
   }) async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
       throw UnsupportedError(
@@ -33,7 +35,7 @@ class PlatformServiceCalendarLauncher implements ServiceCalendarLauncher {
       'description': targetOdometerKm == null
           ? 'Service reminder from Car Tracker.'
           : 'Service reminder from Car Tracker. Mileage target: '
-                '$targetOdometerKm km.',
+                '${formatOdometerKm(targetOdometerKm)} km.',
     });
   }
 }

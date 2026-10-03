@@ -8,7 +8,7 @@ import 'app_database/generated/schema.dart';
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
 
-  test('v1 to v4 preserves records and adds lifecycle fields safely', () async {
+  test('v1 to v5 preserves records and converts odometers safely', () async {
     final verifier = SchemaVerifier(GeneratedHelper());
     final schema = await verifier.schemaAt(1);
     schema.rawDatabase.execute(
@@ -29,7 +29,7 @@ void main() {
     );
 
     final database = AppDatabase.forTesting(schema.newConnection());
-    await verifier.migrateAndValidate(database, 4);
+    await verifier.migrateAndValidate(database, 5);
     final records = await database.select(database.maintenanceRecords).get();
 
     expect(records, hasLength(1));
@@ -37,11 +37,11 @@ void main() {
     expect(records.single.totalCostSen, 62000);
     expect(records.single.serviceTitle, isNull);
     final reminders = await database.select(database.serviceReminders).get();
-    expect(reminders.single.targetOdometerKm, 15200);
+    expect(reminders.single.targetOdometerKm, 15200.0);
     expect(reminders.single.completedAt, isNull);
     expect(reminders.single.lastMileageNotificationPercent, isNull);
     final vehicles = await database.select(database.vehicles).get();
-    expect(vehicles.single.startingOdometerKm, 0);
+    expect(vehicles.single.startingOdometerKm, 0.0);
     expect(vehicles.single.photoPath, isNull);
     await database.close();
     schema.close();

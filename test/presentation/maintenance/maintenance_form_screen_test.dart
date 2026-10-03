@@ -64,7 +64,7 @@ void main() {
     await pump(tester, onSaved: (id) => savedId = id);
     await tester.enterText(
       find.byKey(const Key('maintenance-odometer')),
-      '10240',
+      '102400',
     );
     await tester.enterText(
       find.byKey(const Key('maintenance-workshop')),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../domain/analytics/analytics.dart';
 import '../../domain/maintenance/maintenance.dart';
+import '../../domain/odometer/odometer_value.dart';
 import '../fuel/fuel_formatters.dart';
 import '../fuel/fuel_brand_assets.dart';
 import '../maintenance/maintenance_formatters.dart';
@@ -184,7 +185,7 @@ class _Fuel extends StatelessWidget {
           detail: latest == null
               ? null
               : '${latest.attributedBrand ?? 'Mixed'} · '
-                    '${latest.distanceKm} km · '
+                    '${formatOdometerKm(latest.distanceKm)} km · '
                     '${_rate(latest.costRinggitPerKm, 'RM/km', prefix: 'RM')}',
         ),
         _MetricGrid(
@@ -998,7 +999,7 @@ String _targetText(UpcomingServiceReminder target) {
     parts.add(formatMaintenanceDate(date.toLocal()));
   }
   if (target.targetOdometerKm case final odometer?) {
-    parts.add('$odometer km');
+    parts.add('${formatOdometerKm(odometer)} km');
   }
   return parts.join(' · ');
 }

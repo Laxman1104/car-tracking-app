@@ -7,7 +7,7 @@ void main() {
   FuelEventSnapshot event(
     int id,
     int day,
-    int odometer,
+    double odometer,
     String brand,
     int ml,
     int sen,

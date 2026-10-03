@@ -8,7 +8,7 @@ void main() {
   FuelEventSnapshot event({
     required int id,
     required int day,
-    required int odometer,
+    required double odometer,
     required bool full,
     String brand = 'PETRONAS',
   }) {

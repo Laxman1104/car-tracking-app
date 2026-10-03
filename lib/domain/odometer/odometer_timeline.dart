@@ -33,7 +33,7 @@ class OdometerObservation {
   final OdometerObservationKey key;
   final int vehicleId;
   final DateTime occurredAt;
-  final int odometerKm;
+  final double odometerKm;
 }
 
 enum OdometerValidationIssue {

@@ -23,7 +23,7 @@ class ServiceReminderTarget {
   final int vehicleId;
   final int maintenanceRecordId;
   final DateTime? targetDate;
-  final int? targetOdometerKm;
+  final double? targetOdometerKm;
 }
 
 enum MaintenanceRuleIssue {
@@ -65,9 +65,9 @@ class ServiceIntervalProgress {
     required this.remainingKm,
   });
 
-  final int travelledKm;
-  final int intervalKm;
-  final int remainingKm;
+  final double travelledKm;
+  final double intervalKm;
+  final double remainingKm;
 
   double get ratio => travelledKm / intervalKm;
   int get percentage => (ratio * 100).floor();
@@ -82,7 +82,7 @@ class MaintenanceDomainService {
     required MaintenanceCategory category,
     required Iterable<MaintenanceItemInput> items,
     DateTime? nextServiceDate,
-    int? nextServiceOdometerKm,
+    double? nextServiceOdometerKm,
   }) {
     final issues = <MaintenanceRuleIssue>{};
     for (final item in items) {
@@ -123,7 +123,7 @@ class MaintenanceDomainService {
   ServiceReminderEvaluation evaluateReminder({
     required ServiceReminderTarget reminder,
     required DateTime now,
-    required int currentOdometerKm,
+    required double currentOdometerKm,
   }) {
     final reached = <ServiceReminderTrigger>{};
     final targetDate = reminder.targetDate;
@@ -144,14 +144,14 @@ class MaintenanceDomainService {
   }
 
   ServiceIntervalProgress? evaluateMileageProgress({
-    required int serviceOdometerKm,
-    required int currentOdometerKm,
-    required int targetOdometerKm,
+    required double serviceOdometerKm,
+    required double currentOdometerKm,
+    required double targetOdometerKm,
   }) {
     final interval = targetOdometerKm - serviceOdometerKm;
     if (interval <= 0) return null;
     final distanceTravelled = currentOdometerKm - serviceOdometerKm;
-    final travelled = distanceTravelled.clamp(0, interval);
+    final travelled = distanceTravelled.clamp(0, interval).toDouble();
     return ServiceIntervalProgress(
       travelledKm: travelled,
       intervalKm: interval,

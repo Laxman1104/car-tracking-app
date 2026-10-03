@@ -18,6 +18,7 @@ import '../data/repositories/maintenance_repository.dart';
 import '../data/repositories/service_reminder_repository.dart';
 import '../data/repositories/vehicle_repository.dart';
 import '../domain/maintenance/maintenance.dart';
+import '../domain/odometer/odometer_value.dart';
 import '../presentation/fuel/cycle_details_screen.dart';
 import '../presentation/fuel/fuel_event_details_screen.dart';
 import '../presentation/fuel/fuel_event_form_screen.dart';
@@ -125,14 +126,14 @@ class _StageFourPreviewAppState extends State<StageFourPreviewApp> {
     final vehicleId = await VehicleRepository(_database).create(
       VehiclesCompanion.insert(
         displayName: 'Proton S70',
-        startingOdometerKm: const Value(10000),
+        startingOdometerKm: const Value(10000.0),
       ),
     );
     final now = DateTime.now();
     for (final fixture in [
-      (14, 10000, 'PETRONAS', 40000, 7000, true),
-      (7, 10200, 'Shell', 12000, 3000, false),
-      (1, 10450, 'Petron', 18000, 3600, true),
+      (14, 10000.0, 'PETRONAS', 40000, 7000, true),
+      (7, 10200.0, 'Shell', 12000, 3000, false),
+      (1, 10450.0, 'Petron', 18000, 3600, true),
     ]) {
       await _createFuel(
         FuelEventInput(
@@ -150,7 +151,7 @@ class _StageFourPreviewAppState extends State<StageFourPreviewApp> {
       MaintenanceRecordsCompanion.insert(
         vehicleId: vehicleId,
         occurredAt: now.subtract(const Duration(hours: 12)).toUtc(),
-        odometerKm: 10450,
+        odometerKm: 10450.0,
         category: MaintenanceCategory.service,
         workshop: const Value('Proton Service Centre'),
         serviceTitle: const Value('General Service'),
@@ -181,14 +182,14 @@ class _StageFourPreviewAppState extends State<StageFourPreviewApp> {
         vehicleId: vehicleId,
         maintenanceRecordId: recordId,
         targetDate: Value(now.add(const Duration(days: 180)).toUtc()),
-        targetOdometerKm: const Value(20000),
+        targetOdometerKm: const Value(20000.0),
       ),
     );
     final tyreRecordId = await _maintenance.createRecord(
       MaintenanceRecordsCompanion.insert(
         vehicleId: vehicleId,
         occurredAt: now.subtract(const Duration(hours: 6)).toUtc(),
-        odometerKm: 10450,
+        odometerKm: 10450.0,
         category: MaintenanceCategory.service,
         workshop: const Value('Tyre Specialist'),
         serviceTitle: const Value('Tyre Rotation'),
@@ -209,7 +210,7 @@ class _StageFourPreviewAppState extends State<StageFourPreviewApp> {
         vehicleId: vehicleId,
         maintenanceRecordId: tyreRecordId,
         targetDate: Value(now.add(const Duration(days: 90)).toUtc()),
-        targetOdometerKm: const Value(15000),
+        targetOdometerKm: const Value(15000.0),
       ),
     );
     return (await VehicleRepository(_database).findById(vehicleId))!;
@@ -388,7 +389,7 @@ class _PreviewHome extends StatefulWidget {
   });
 
   final String vehicleName;
-  final Future<int?> Function() loadCurrentOdometer;
+  final Future<double?> Function() loadCurrentOdometer;
   final Future<void> Function() openFuel;
   final Future<void> Function() openMaintenance;
   final Future<void> Function() openAnalytics;
@@ -399,7 +400,7 @@ class _PreviewHome extends StatefulWidget {
 }
 
 class _PreviewHomeState extends State<_PreviewHome> {
-  late Future<int?> _currentOdometer;
+  late Future<double?> _currentOdometer;
 
   @override
   void initState() {
@@ -423,10 +424,8 @@ class _PreviewHomeState extends State<_PreviewHome> {
     });
   }
 
-  String _formattedOdometer(int currentOdometerKm) {
-    final digits = currentOdometerKm.toString();
-    return digits.replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
-  }
+  String _formattedOdometer(double currentOdometerKm) =>
+      formatOdometerKm(currentOdometerKm);
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -495,7 +494,7 @@ class _PreviewHomeState extends State<_PreviewHome> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                FutureBuilder<int?>(
+                FutureBuilder<double?>(
                   future: _currentOdometer,
                   builder: (context, snapshot) => Text.rich(
                     TextSpan(

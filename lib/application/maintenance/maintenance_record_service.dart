@@ -14,6 +14,7 @@ import '../../data/repositories/maintenance_repository.dart';
 import '../../data/repositories/service_reminder_repository.dart';
 import '../../domain/maintenance/maintenance.dart';
 import '../../domain/odometer/odometer_timeline.dart';
+import '../../domain/odometer/odometer_value.dart';
 import '../../domain/validation/domain_validation.dart';
 
 class MaintenanceAttachmentInput {
@@ -51,7 +52,7 @@ class MaintenanceRecordInput {
 
   final int vehicleId;
   final DateTime occurredAt;
-  final int odometerKm;
+  final double odometerKm;
   final MaintenanceCategory category;
   final String workshop;
   final int totalCostSen;
@@ -59,7 +60,7 @@ class MaintenanceRecordInput {
   final String? serviceTitle;
   final String? notes;
   final DateTime? nextServiceDate;
-  final int? nextServiceOdometerKm;
+  final double? nextServiceOdometerKm;
   final List<MaintenanceAttachmentInput> newAttachments;
   final Set<int> retainedAttachmentIds;
 }
@@ -87,7 +88,7 @@ class MaintenanceHistoryData {
   });
 
   final List<MaintenanceRecordBundle> records;
-  final int? currentOdometerKm;
+  final double? currentOdometerKm;
   final ServiceReminder? activeReminder;
   final String? activeReminderTitle;
 }
@@ -124,8 +125,8 @@ abstract interface class ServiceReminderScheduler {
     required int maintenanceRecordId,
     required String title,
     required int stagePercent,
-    required int currentOdometerKm,
-    required int targetOdometerKm,
+    required double currentOdometerKm,
+    required double targetOdometerKm,
   });
 }
 
@@ -140,8 +141,8 @@ class NoopServiceReminderScheduler implements ServiceReminderScheduler {
     required int maintenanceRecordId,
     required String title,
     required int stagePercent,
-    required int currentOdometerKm,
-    required int targetOdometerKm,
+    required double currentOdometerKm,
+    required double targetOdometerKm,
   }) async {}
 
   @override
@@ -497,8 +498,8 @@ class MaintenanceRecordService {
       throw MaintenanceRecordException(
         MaintenanceRecordIssue.odometerChronologyConflict,
         previous != null && input.odometerKm < previous.odometerKm
-            ? 'Odometer must be at least ${previous.odometerKm} km for this date and time.'
-            : 'Odometer must not exceed ${next!.odometerKm} km for this date and time.',
+            ? 'Odometer must be at least ${formatOdometerKm(previous.odometerKm)} km for this date and time.'
+            : 'Odometer must not exceed ${formatOdometerKm(next!.odometerKm)} km for this date and time.',
       );
     }
   }
@@ -602,8 +603,8 @@ class MaintenanceRecordService {
     required int maintenanceRecordId,
     required String title,
     required int stagePercent,
-    required int currentOdometerKm,
-    required int targetOdometerKm,
+    required double currentOdometerKm,
+    required double targetOdometerKm,
   }) async {
     try {
       await _scheduler.showMileageProgress(

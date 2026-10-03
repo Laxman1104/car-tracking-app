@@ -4,6 +4,7 @@ import '../../data/mappers/history_mappers.dart';
 import '../../data/repositories/fuel_event_repository.dart';
 import '../../data/repositories/maintenance_repository.dart';
 import '../../domain/odometer/odometer_timeline.dart';
+import '../../domain/odometer/odometer_value.dart';
 import '../../domain/validation/domain_validation.dart';
 import 'create_fuel_event.dart';
 
@@ -76,8 +77,8 @@ class UpdateFuelEvent {
       throw CreateFuelEventException(
         issue: CreateFuelEventIssue.odometerChronologyConflict,
         message: previous != null && input.odometerKm < previous.odometerKm
-            ? 'Odometer must be at least ${previous.odometerKm} km for this date and time.'
-            : 'Odometer must not exceed ${next!.odometerKm} km for this date and time.',
+            ? 'Odometer must be at least ${formatOdometerKm(previous.odometerKm)} km for this date and time.'
+            : 'Odometer must not exceed ${formatOdometerKm(next!.odometerKm)} km for this date and time.',
         odometerValidation: chronology,
       );
     }

@@ -9,7 +9,7 @@ void main() {
     required OdometerSource source,
     required int id,
     required int day,
-    required int odometerKm,
+    required double odometerKm,
     int vehicleId = 1,
   }) {
     return OdometerObservation(

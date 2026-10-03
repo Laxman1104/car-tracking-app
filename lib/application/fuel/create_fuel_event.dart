@@ -5,6 +5,7 @@ import '../../data/mappers/history_mappers.dart';
 import '../../data/repositories/fuel_event_repository.dart';
 import '../../data/repositories/maintenance_repository.dart';
 import '../../domain/odometer/odometer_timeline.dart';
+import '../../domain/odometer/odometer_value.dart';
 import '../../domain/validation/domain_validation.dart';
 
 typedef OdometerUpdated = Future<void> Function(int vehicleId);
@@ -23,7 +24,7 @@ class FuelEventInput {
 
   final int vehicleId;
   final DateTime occurredAt;
-  final int odometerKm;
+  final double odometerKm;
   final String fuelBrand;
   final int fuelVolumeMillilitres;
   final int costSen;
@@ -142,7 +143,7 @@ class CreateFuelEvent {
   Future<int?> tripBDifferenceMetres({
     required int vehicleId,
     required DateTime occurredAt,
-    required int odometerKm,
+    required double odometerKm,
     required int tripDistanceMetres,
   }) async {
     final events = await _fuelEvents.findForVehicle(vehicleId);
@@ -162,12 +163,12 @@ class CreateFuelEvent {
   String _chronologyMessage(OdometerValidationResult result) {
     if (result.issues.contains(OdometerValidationIssue.belowPreviousReading) &&
         result.previous != null) {
-      return 'Odometer must be at least ${result.previous!.odometerKm} km '
+      return 'Odometer must be at least ${formatOdometerKm(result.previous!.odometerKm)} km '
           'for this date and time.';
     }
     if (result.issues.contains(OdometerValidationIssue.aboveNextReading) &&
         result.next != null) {
-      return 'Odometer must not exceed ${result.next!.odometerKm} km '
+      return 'Odometer must not exceed ${formatOdometerKm(result.next!.odometerKm)} km '
           'for this date and time.';
     }
     return 'This odometer reading conflicts with the vehicle history.';

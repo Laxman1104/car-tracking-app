@@ -29,8 +29,8 @@ void main() {
         .create(VehiclesCompanion.insert(displayName: 'Synthetic S70'));
     final fuel = FuelEventRepository(source);
     for (final row in [
-      (DateTime.utc(2027, 1, 1), 10000, 40000, 7000, true),
-      (DateTime.utc(2027, 1, 10), 10450, 30000, 6600, true),
+      (DateTime.utc(2027, 1, 1), 10000.0, 40000, 7000, true),
+      (DateTime.utc(2027, 1, 10), 10450.0, 30000, 6600, true),
     ]) {
       await fuel.create(
         FuelEventsCompanion.insert(

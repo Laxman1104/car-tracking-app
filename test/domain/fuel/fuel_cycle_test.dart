@@ -6,7 +6,7 @@ void main() {
 
   FuelEventSnapshot event({
     required int id,
-    required int odometerKm,
+    required double odometerKm,
     required int volumeMl,
     required int costSen,
     required bool full,
@@ -50,6 +50,32 @@ void main() {
     expect(cycle.fuelEfficiencyKmPerL, closeTo(14.285714, 0.000001));
     expect(cycle.costRinggitPerKm, closeTo(0.14, 0.000001));
     expect(result.pendingCycle!.openingFull.id, 2);
+  });
+
+  test('decimal odometers preserve the exact one-decimal cycle distance', () {
+    final cycle = engine
+        .build([
+          event(
+            id: 1,
+            odometerKm: 1000.2,
+            volumeMl: 40000,
+            costSen: 7000,
+            full: true,
+          ),
+          event(
+            id: 2,
+            odometerKm: 1450.7,
+            volumeMl: 30000,
+            costSen: 6600,
+            full: true,
+          ),
+        ])
+        .completedCycles
+        .single;
+
+    expect(cycle.distanceKm, closeTo(450.5, 0.000001));
+    expect(cycle.fuelEfficiencyKmPerL, closeTo(15.016666, 0.000001));
+    expect(cycle.costRinggitPerKm, closeTo(66 / 450.5, 0.000001));
   });
 
   test('early Full top-up remains a valid measured cycle', () {

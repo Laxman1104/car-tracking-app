@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../application/maintenance/maintenance_record_service.dart';
 import '../../application/maintenance/service_calendar_launcher.dart';
 import '../../domain/maintenance/maintenance.dart';
+import '../../domain/odometer/odometer_value.dart';
 import '../fuel/fuel_formatters.dart';
 import '../theme/app_theme.dart';
 import 'maintenance_details_screen.dart';
@@ -266,7 +267,7 @@ class _ReminderCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Current odometer: ${data.currentOdometerKm?.toString() ?? '—'} km',
+                'Current odometer: ${data.currentOdometerKm == null ? '—' : formatOdometerKm(data.currentOdometerKm!)} km',
                 style: const TextStyle(color: AppColors.textSecondary),
               ),
             ],
@@ -284,7 +285,7 @@ class _ReminderCard extends StatelessWidget {
     final evaluation = const MaintenanceDomainService().evaluateReminder(
       reminder: target,
       now: DateTime.now().toUtc(),
-      currentOdometerKm: data.currentOdometerKm ?? 0,
+      currentOdometerKm: data.currentOdometerKm ?? 0.0,
     );
     final sourceRecord = data.records
         .where((bundle) => bundle.record.id == reminder.maintenanceRecordId)
@@ -299,7 +300,8 @@ class _ReminderCard extends StatelessWidget {
             targetOdometerKm: targetOdometer,
           );
     final parts = <String>[
-      if (reminder.targetOdometerKm != null) '${reminder.targetOdometerKm} km',
+      if (reminder.targetOdometerKm != null)
+        '${formatOdometerKm(reminder.targetOdometerKm!)} km',
       if (reminder.targetDate != null)
         formatMaintenanceDate(reminder.targetDate!.toLocal()),
     ];
@@ -410,10 +412,7 @@ class _ReminderCard extends StatelessWidget {
   }
 }
 
-String _formatKm(int value) => value.toString().replaceAllMapped(
-  RegExp(r'\B(?=(\d{3})+(?!\d))'),
-  (_) => ',',
-);
+String _formatKm(num value) => formatOdometerKm(value);
 
 class _FilterChip extends StatelessWidget {
   const _FilterChip({
@@ -508,7 +507,7 @@ class _RecordCard extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    '${record.odometerKm} km',
+                    '${formatOdometerKm(record.odometerKm)} km',
                     style: const TextStyle(color: AppColors.textSecondary),
                   ),
                   const Spacer(),

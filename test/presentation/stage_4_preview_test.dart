@@ -25,7 +25,7 @@ void main() {
     );
     await tester.enterText(
       find.byKey(const Key('new-vehicle-odometer')),
-      '12345',
+      '123450',
     );
     tester.view.viewInsets = const FakeViewPadding(bottom: 300);
     addTearDown(tester.view.resetViewInsets);
@@ -169,7 +169,7 @@ void main() {
     );
     await tester.enterText(
       find.byKey(const Key('maintenance-odometer')),
-      '11000',
+      '110000',
     );
     await tester.enterText(
       find.byKey(const Key('maintenance-workshop')),
@@ -219,7 +219,7 @@ void main() {
     );
     await tester.enterText(
       find.byKey(const Key('new-vehicle-odometer')),
-      '2500',
+      '25000',
     );
     await tester.tap(find.byKey(const Key('continue-new-vehicle')));
     await tester.pumpAndSettle();

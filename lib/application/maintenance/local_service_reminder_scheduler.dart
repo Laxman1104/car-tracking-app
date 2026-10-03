@@ -5,6 +5,7 @@ import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 import 'maintenance_record_service.dart';
+import '../../domain/odometer/odometer_value.dart';
 
 class LocalServiceReminderScheduler implements ServiceReminderScheduler {
   LocalServiceReminderScheduler({FlutterLocalNotificationsPlugin? plugin})
@@ -117,8 +118,8 @@ class LocalServiceReminderScheduler implements ServiceReminderScheduler {
     required int maintenanceRecordId,
     required String title,
     required int stagePercent,
-    required int currentOdometerKm,
-    required int targetOdometerKm,
+    required double currentOdometerKm,
+    required double targetOdometerKm,
   }) async {
     await initialize();
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
@@ -130,9 +131,10 @@ class LocalServiceReminderScheduler implements ServiceReminderScheduler {
       if (allowed == false) return;
     }
     final body = stagePercent >= 100
-        ? 'Due now at $targetOdometerKm km.'
+        ? 'Due now at ${formatOdometerKm(targetOdometerKm)} km.'
         : '$stagePercent% of the mileage interval reached. Current odometer: '
-              '$currentOdometerKm km; target: $targetOdometerKm km.';
+              '${formatOdometerKm(currentOdometerKm)} km; target: '
+              '${formatOdometerKm(targetOdometerKm)} km.';
     await _plugin.show(
       id: maintenanceRecordId * 100 + stagePercent,
       title: title,

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../application/fuel/create_fuel_event.dart';
 import '../../application/fuel/update_fuel_event.dart';
 import '../../domain/fuel/fuel_cycle.dart';
+import '../../domain/odometer/odometer_value.dart';
 import '../../domain/validation/scaled_decimal.dart';
 import '../theme/app_theme.dart';
 import '../widgets/fixed_decimal_input_formatter.dart';
@@ -43,7 +44,7 @@ class _FuelEventFormScreenState extends State<FuelEventFormScreen> {
   ];
 
   final _formKey = GlobalKey<FormState>();
-  final _odometerController = TextEditingController();
+  final _odometerController = TextEditingController(text: '0.0');
   final _litresController = TextEditingController(text: '0.00');
   final _costController = TextEditingController(text: '0.00');
   final _tripBController = TextEditingController();
@@ -75,7 +76,10 @@ class _FuelEventFormScreenState extends State<FuelEventFormScreen> {
         widget.initialOccurredAt ??
         DateTime.now();
     if (initial != null) {
-      _odometerController.text = initial.odometerKm.toString();
+      _odometerController.text = formatOdometerKm(
+        initial.odometerKm,
+        grouped: false,
+      );
       _litresController.text = _formatScaled(
         initial.fuelVolumeMillilitres,
         3,
@@ -122,8 +126,12 @@ class _FuelEventFormScreenState extends State<FuelEventFormScreen> {
               TextFormField(
                 key: const Key('fuel-odometer-field'),
                 controller: _odometerController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                inputFormatters: const [
+                  FixedDecimalInputFormatter(decimalPlaces: 1),
+                ],
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
                   hintText: 'Enter current reading',
@@ -138,8 +146,10 @@ class _FuelEventFormScreenState extends State<FuelEventFormScreen> {
                 },
                 validator: (value) {
                   if (_chronologyError != null) return _chronologyError;
-                  final parsed = int.tryParse(value?.trim() ?? '');
-                  if (parsed == null) return 'Enter a whole odometer reading.';
+                  final parsed = parseOdometerKm(value ?? '');
+                  if (parsed == null) {
+                    return 'Enter an odometer reading to one decimal place.';
+                  }
                   if (parsed < 0) return 'Odometer cannot be negative.';
                   return null;
                 },
@@ -378,7 +388,7 @@ class _FuelEventFormScreenState extends State<FuelEventFormScreen> {
 
   Future<void> _refreshTripComparison() async {
     final request = ++_comparisonRequest;
-    final odometer = int.tryParse(_odometerController.text.trim());
+    final odometer = parseOdometerKm(_odometerController.text);
     final tripMetres = ScaledDecimalParser.parse(
       _tripBController.text,
       fractionDigits: 3,
@@ -459,7 +469,7 @@ class _FuelEventFormScreenState extends State<FuelEventFormScreen> {
       final input = FuelEventInput(
         vehicleId: widget.vehicleId,
         occurredAt: _occurredAt,
-        odometerKm: int.parse(_odometerController.text.trim()),
+        odometerKm: parseOdometerKm(_odometerController.text)!,
         fuelBrand: _selectedBrand!,
         fuelVolumeMillilitres: ScaledDecimalParser.parse(
           _litresController.text,

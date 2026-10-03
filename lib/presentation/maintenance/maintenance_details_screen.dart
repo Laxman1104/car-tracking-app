@@ -8,6 +8,7 @@ import '../../application/maintenance/maintenance_record_service.dart';
 import '../../application/maintenance/service_calendar_launcher.dart';
 import '../../data/database/app_database.dart';
 import '../../data/database/schema.dart';
+import '../../domain/odometer/odometer_value.dart';
 import '../fuel/fuel_formatters.dart';
 import '../theme/app_theme.dart';
 import 'maintenance_form_screen.dart';
@@ -235,7 +236,7 @@ class _DetailsBody extends StatelessWidget {
                       Expanded(
                         child: _Fact(
                           label: 'ODOMETER',
-                          value: '${record.odometerKm} km',
+                          value: '${formatOdometerKm(record.odometerKm)} km',
                         ),
                       ),
                     ],
@@ -277,7 +278,7 @@ class _DetailsBody extends StatelessWidget {
                 subtitle: Text(
                   [
                     if (reminder.targetOdometerKm != null)
-                      '${reminder.targetOdometerKm} km',
+                      '${formatOdometerKm(reminder.targetOdometerKm!)} km',
                     if (reminder.targetDate != null)
                       formatMaintenanceDate(reminder.targetDate!.toLocal()),
                   ].join(' or '),
