@@ -28,7 +28,7 @@ A private-first Android app for tracking fuel usage, maintenance, service remind
 
 Open the APK on your Android phone and allow installation from that browser or file manager if Android prompts you.
 
-## Version 1.0.4 (build 4)
+## Version 1.0.3 (build 4)
 
 - Service, Repairs, and Accessories records can use a custom title in maintenance history.
 - Total Maintenance Expenditure is clearly labelled as Service + Repairs.

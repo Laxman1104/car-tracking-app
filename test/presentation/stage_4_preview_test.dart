@@ -221,7 +221,7 @@ void main() {
     await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('app-version')), findsOneWidget);
-    expect(find.text('Version 1.0.4'), findsOneWidget);
+    expect(find.text('Version 1.0.3'), findsOneWidget);
     await tester.tap(find.byKey(const Key('open-vehicle-lifecycle')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('retire-start-new-vehicle')));
