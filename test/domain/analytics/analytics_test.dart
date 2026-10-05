@@ -81,6 +81,19 @@ void main() {
       );
       expect(
         analytics.maintenanceCategories
+            .firstWhere((e) => e.category == MaintenanceCategory.accessories)
+            .spendingShare,
+        0,
+      );
+      expect(
+        analytics.maintenanceCategories
+            .firstWhere((e) => e.category == MaintenanceCategory.service)
+            .spendingShare,
+        1,
+      );
+      expect(analytics.maintenanceExpenditureRecordCount, 2);
+      expect(
+        analytics.maintenanceCategories
             .firstWhere((e) => e.category == MaintenanceCategory.repairs)
             .recordCount,
         1,

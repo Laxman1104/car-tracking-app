@@ -263,24 +263,40 @@ class _Maintenance extends StatelessWidget {
       const _Heading('Maintenance spending'),
       _HeroMetric(
         label: 'TOTAL MAINTENANCE EXPENDITURE',
+        labelDetail: 'Service + Repairs',
         value: formatRinggitFromSen(data.totalMaintenanceCostSen),
         icon: Icons.build_outlined,
         detail:
-            '${data.maintenanceRecordCount} '
-            '${data.maintenanceRecordCount == 1 ? 'record' : 'records'}',
+            '${data.maintenanceExpenditureRecordCount} '
+            '${data.maintenanceExpenditureRecordCount == 1 ? 'record' : 'records'}',
       ),
       const SizedBox(height: 8),
-      ...data.maintenanceCategories.map(
-        (entry) => _BreakdownRow(
-          label:
-              '${maintenanceCategoryLabel(entry.category)} · '
-              '${entry.recordCount}',
-          value:
-              '${formatRinggitFromSen(entry.costSen)} · '
-              '${(entry.spendingShare * 100).toStringAsFixed(0)}%',
-          color: _categoryColor(entry.category),
-        ),
-      ),
+      ...data.maintenanceCategories
+          .where((entry) => entry.category != MaintenanceCategory.accessories)
+          .map(
+            (entry) => _BreakdownRow(
+              label:
+                  '${maintenanceCategoryLabel(entry.category)} · '
+                  '${entry.recordCount}',
+              value:
+                  '${formatRinggitFromSen(entry.costSen)} · '
+                  '${(entry.spendingShare * 100).toStringAsFixed(0)}%',
+              color: _categoryColor(entry.category),
+            ),
+          ),
+      const SizedBox(height: 8),
+      const _AccessoriesHeader(),
+      ...data.maintenanceCategories
+          .where((entry) => entry.category == MaintenanceCategory.accessories)
+          .map(
+            (entry) => _BreakdownRow(
+              label:
+                  '${maintenanceCategoryLabel(entry.category)} · '
+                  '${entry.recordCount}',
+              value: formatRinggitFromSen(entry.costSen),
+              color: _categoryColor(entry.category),
+            ),
+          ),
       const SizedBox(height: 24),
       const _Heading('Visit timeline'),
       if (data.maintenanceRecords.isEmpty)
@@ -507,6 +523,44 @@ class _BreakdownRow extends StatelessWidget {
         value,
         style: const TextStyle(fontWeight: FontWeight.w700),
       ),
+    ),
+  );
+}
+
+class _AccessoriesHeader extends StatelessWidget {
+  const _AccessoriesHeader();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    key: const Key('accessories-separate-header'),
+    margin: const EdgeInsets.only(bottom: 8),
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    decoration: BoxDecoration(
+      color: AppColors.surfaceRaised,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: AppColors.border),
+    ),
+    child: const Row(
+      children: [
+        Icon(Icons.extension_outlined, color: AppColors.textSecondary),
+        SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'ACCESSORIES',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+              SizedBox(height: 2),
+              Text(
+                'Tracked separately from maintenance expenditure',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+              ),
+            ],
+          ),
+        ),
+      ],
     ),
   );
 }

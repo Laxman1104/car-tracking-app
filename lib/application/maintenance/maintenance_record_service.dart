@@ -253,11 +253,7 @@ class MaintenanceRecordService {
           odometerKm: storedOdometer,
           category: input.category,
           workshop: Value(input.workshop.trim()),
-          serviceTitle: Value(
-            input.category == MaintenanceCategory.service
-                ? _nullableText(input.serviceTitle)
-                : null,
-          ),
+          serviceTitle: Value(_nullableText(input.serviceTitle)),
           totalCostSen: input.totalCostSen,
           notes: Value(_nullableText(input.notes)),
         ),
@@ -293,11 +289,7 @@ class MaintenanceRecordService {
           odometerKm: storedOdometer,
           category: input.category,
           workshop: Value(input.workshop.trim()),
-          serviceTitle: Value(
-            input.category == MaintenanceCategory.service
-                ? _nullableText(input.serviceTitle)
-                : null,
-          ),
+          serviceTitle: Value(_nullableText(input.serviceTitle)),
           totalCostSen: input.totalCostSen,
           notes: Value(_nullableText(input.notes)),
           updatedAt: DateTime.now().toUtc(),
@@ -601,14 +593,12 @@ class MaintenanceRecordService {
     final maintenance = await _maintenance.findRecordsForVehicle(
       input.vehicleId,
     );
-    return const OdometerTimelineEngine()
-            .resolveCurrent([
-              ...fuel.map((event) => event.toOdometerObservation()),
-              ...maintenance
-                  .map((record) => record.toOdometerObservation())
-                  .whereType<OdometerObservation>(),
-            ])
-            ?.odometerKm ??
+    return const OdometerTimelineEngine().resolveCurrent([
+          ...fuel.map((event) => event.toOdometerObservation()),
+          ...maintenance
+              .map((record) => record.toOdometerObservation())
+              .whereType<OdometerObservation>(),
+        ])?.odometerKm ??
         0;
   }
 

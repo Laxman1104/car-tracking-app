@@ -28,12 +28,12 @@ A private-first Android app for tracking fuel usage, maintenance, service remind
 
 Open the APK on your Android phone and allow installation from that browser or file manager if Android prompts you.
 
-## Version 1.0.2 (build 3)
+## Version 1.0.4 (build 4)
 
-- Ownership spending and monthly charts count Fuel + Service + Repairs, excluding Accessories.
-- Accessories remain visible separately in maintenance analytics and no longer request or contribute odometer readings.
-- Odometer inputs and displays use whole numbers. Existing decimal readings remain stored unchanged.
-- The Home odometer subtitle uses a smaller single-line font.
+- Service, Repairs, and Accessories records can use a custom title in maintenance history.
+- Total Maintenance Expenditure is clearly labelled as Service + Repairs.
+- Accessories have a separate analytics section that keeps their total cost without a misleading percentage.
+- The Settings & Data page shows the installed app version.
 - Full-to-full fuel-cycle mathematics are unchanged.
 
 ### Updating without losing records

@@ -129,14 +129,22 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Upcoming service reminders'), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text('General Service'),
+      find.text('Upcoming service reminders', skipOffstage: false),
       240,
       scrollable: find.byType(Scrollable).last,
     );
-    expect(find.text('General Service'), findsOneWidget);
-    expect(find.text('Tyre Rotation'), findsOneWidget);
+    expect(
+      find.text('Upcoming service reminders', skipOffstage: false),
+      findsOneWidget,
+    );
+    await tester.scrollUntilVisible(
+      find.text('General Service', skipOffstage: false),
+      240,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.text('General Service', skipOffstage: false), findsOneWidget);
+    expect(find.text('Tyre Rotation', skipOffstage: false), findsOneWidget);
   });
 
   testWidgets('maintenance saves and reminder completion refresh immediately', (
@@ -212,6 +220,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
+    expect(find.byKey(const Key('app-version')), findsOneWidget);
+    expect(find.text('Version 1.0.4'), findsOneWidget);
     await tester.tap(find.byKey(const Key('open-vehicle-lifecycle')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('retire-start-new-vehicle')));

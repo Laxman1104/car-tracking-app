@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../app_version.dart';
 import '../../application/portability/data_portability_service.dart';
 import '../theme/app_theme.dart';
 
@@ -112,6 +113,14 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
             subtitle: 'Validates the ZIP before replacing local app data.',
             enabled: _busy == null,
             onTap: _restore,
+          ),
+          const SizedBox(height: 32),
+          const Center(
+            child: Text(
+              'Version $appVersion',
+              key: Key('app-version'),
+              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+            ),
           ),
         ],
       ),

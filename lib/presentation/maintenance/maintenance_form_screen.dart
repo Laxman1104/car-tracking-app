@@ -142,19 +142,23 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
               }),
             ),
             const SizedBox(height: 22),
-            if (_category == MaintenanceCategory.service) ...[
-              const _Label('SERVICE / REMINDER TITLE'),
-              const SizedBox(height: 8),
-              TextFormField(
-                key: const Key('maintenance-service-title'),
-                controller: _serviceTitle,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.label_outline),
-                  hintText: 'e.g. General Service or Tyre Rotation',
-                ),
+            _Label(
+              _category == MaintenanceCategory.service
+                  ? 'SERVICE / REMINDER TITLE'
+                  : 'RECORD TITLE',
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              key: const Key('maintenance-service-title'),
+              controller: _serviceTitle,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.label_outline),
+                hintText: _category == MaintenanceCategory.service
+                    ? 'e.g. General Service or Tyre Rotation'
+                    : 'e.g. Brake Repair or Dash Camera',
               ),
-              const SizedBox(height: 22),
-            ],
+            ),
+            const SizedBox(height: 22),
             if (_category != MaintenanceCategory.accessories) ...[
               const _Label('ODOMETER *'),
               const SizedBox(height: 8),
@@ -544,9 +548,7 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
           fractionDigits: 2,
         )!,
         items: List.unmodifiable(_items),
-        serviceTitle: _category == MaintenanceCategory.service
-            ? _serviceTitle.text
-            : null,
+        serviceTitle: _serviceTitle.text,
         notes: _notes.text,
         nextServiceDate: _category == MaintenanceCategory.service
             ? _nextServiceDate

@@ -5,6 +5,7 @@ import 'package:car_tracking_app/data/repositories/fuel_event_repository.dart';
 import 'package:car_tracking_app/data/repositories/maintenance_repository.dart';
 import 'package:car_tracking_app/data/repositories/service_reminder_repository.dart';
 import 'package:car_tracking_app/data/repositories/vehicle_repository.dart';
+import 'package:car_tracking_app/domain/maintenance/maintenance.dart';
 import 'package:car_tracking_app/presentation/maintenance/maintenance_form_screen.dart';
 import 'package:car_tracking_app/presentation/theme/app_theme.dart';
 import 'package:drift/native.dart';
@@ -92,13 +93,44 @@ void main() {
 
     await tester.tap(find.text('Repairs'));
     await tester.pumpAndSettle();
+    expect(find.byKey(const Key('maintenance-service-title')), findsOneWidget);
     expect(find.byKey(const Key('next-service-odometer')), findsNothing);
     expect(find.byKey(const Key('next-service-date')), findsNothing);
 
     await tester.tap(find.text('Accessories'));
     await tester.pumpAndSettle();
+    expect(find.byKey(const Key('maintenance-service-title')), findsOneWidget);
     expect(find.byKey(const Key('next-service-odometer')), findsNothing);
     expect(find.byKey(const Key('maintenance-odometer')), findsNothing);
+  });
+
+  testWidgets('accessory record saves its custom title', (tester) async {
+    int? savedId;
+    await pump(tester, onSaved: (id) => savedId = id);
+    await tester.tap(find.text('Accessories'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('maintenance-service-title')),
+      'Dash Camera',
+    );
+    await tester.enterText(
+      find.byKey(const Key('maintenance-workshop')),
+      'Accessory Shop',
+    );
+    await tester.enterText(
+      find.byKey(const Key('maintenance-total-cost')),
+      '6332',
+    );
+
+    final save = find.byKey(const Key('save-maintenance-record'));
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+
+    expect(savedId, isNotNull);
+    final record = await maintenance.findRecordById(savedId!);
+    expect(record?.category, MaintenanceCategory.accessories);
+    expect(record?.serviceTitle, 'Dash Camera');
   });
 
   testWidgets('line item editor saves cleanly after keyboard entry', (

@@ -139,6 +139,9 @@ class CarAnalytics {
   int get completedCycleFuelCostSen =>
       completedCycles.fold(0, (sum, cycle) => sum + cycle.fuelCostSen);
   int get maintenanceRecordCount => maintenanceRecords.length;
+  int get maintenanceExpenditureRecordCount => maintenanceRecords
+      .where((record) => record.category != MaintenanceCategory.accessories)
+      .length;
   int get totalOwnershipCostSen => totalFuelCostSen + totalMaintenanceCostSen;
   double? get ownershipCostPerKm => trackedDistanceKm == null
       ? null
@@ -167,15 +170,7 @@ class CarAnalyticsEngine {
     final totalFuelCost = events.fold<int>(0, (sum, e) => sum + e.costSen);
     final ownershipMaintenance = maintenance
         .where((record) => record.category != MaintenanceCategory.accessories)
-        .fold<int>(
-      0,
-      (sum, record) => sum + record.costSen,
-    );
-    final allMaintenance = maintenance.fold<int>(
-      0,
-      (sum, record) => sum + record.costSen,
-    );
-
+        .fold<int>(0, (sum, record) => sum + record.costSen);
     return CarAnalytics(
       fuelEvents: List.unmodifiable(events),
       completedCycles: List.unmodifiable(cycles),
@@ -196,7 +191,7 @@ class CarAnalyticsEngine {
       brandEfficiency: _brandEfficiency(cycles),
       maintenanceCategories: _maintenanceCategories(
         maintenance,
-        allMaintenance,
+        ownershipMaintenance,
       ),
       upcomingServiceReminders: List.unmodifiable(upcomingServiceReminders),
     );
@@ -345,7 +340,10 @@ class CarAnalyticsEngine {
         category: category,
         recordCount: matches.length,
         costSen: cost,
-        spendingShare: totalCost == 0 ? 0 : cost / totalCost,
+        spendingShare:
+            category == MaintenanceCategory.accessories || totalCost == 0
+            ? 0
+            : cost / totalCost,
       );
     }),
   );
