@@ -52,7 +52,7 @@ class MaintenanceRecordInput {
 
   final int vehicleId;
   final DateTime occurredAt;
-  final double odometerKm;
+  final double? odometerKm;
   final MaintenanceCategory category;
   final String workshop;
   final int totalCostSen;
@@ -244,12 +244,13 @@ class MaintenanceRecordService {
 
   Future<int> create(MaintenanceRecordInput input) async {
     await _validate(input);
+    final storedOdometer = await _storedOdometer(input);
     final recordId = await _database.transaction(() async {
       final id = await _maintenance.createRecord(
         MaintenanceRecordsCompanion.insert(
           vehicleId: input.vehicleId,
           occurredAt: input.occurredAt.toUtc(),
-          odometerKm: input.odometerKm,
+          odometerKm: storedOdometer,
           category: input.category,
           workshop: Value(input.workshop.trim()),
           serviceTitle: Value(
@@ -277,6 +278,10 @@ class MaintenanceRecordService {
       );
     }
     await _validate(input, editedRecordId: recordId);
+    final storedOdometer = await _storedOdometer(
+      input,
+      existingOdometerKm: existing.odometerKm,
+    );
     final oldAttachments = await _attachments.findForRecord(recordId);
     final removed = oldAttachments
         .where((entry) => !input.retainedAttachmentIds.contains(entry.id))
@@ -285,7 +290,7 @@ class MaintenanceRecordService {
       await _maintenance.updateRecord(
         existing.copyWith(
           occurredAt: input.occurredAt.toUtc(),
-          odometerKm: input.odometerKm,
+          odometerKm: storedOdometer,
           category: input.category,
           workshop: Value(input.workshop.trim()),
           serviceTitle: Value(
@@ -343,7 +348,9 @@ class MaintenanceRecordService {
     final fuel = await _fuelEvents.findForVehicle(vehicleId);
     final observations = [
       ...fuel.map((event) => event.toOdometerObservation()),
-      ...records.map((record) => record.toOdometerObservation()),
+      ...records
+          .map((record) => record.toOdometerObservation())
+          .whereType<OdometerObservation>(),
     ];
     final current = const OdometerTimelineEngine().resolveCurrent(observations);
     ServiceReminder? active;
@@ -457,6 +464,8 @@ class MaintenanceRecordService {
         'Check the itemized work and next-service fields.',
       );
     }
+    if (input.category == MaintenanceCategory.accessories) return;
+    final odometerKm = input.odometerKm!;
     final fuel = await _fuelEvents.findForVehicle(input.vehicleId);
     final maintenance = await _maintenance.findRecordsForVehicle(
       input.vehicleId,
@@ -470,11 +479,13 @@ class MaintenanceRecordService {
               ),
               vehicleId: input.vehicleId,
               occurredAt: input.occurredAt.toUtc(),
-              odometerKm: input.odometerKm,
+              odometerKm: odometerKm,
             ),
             existing: [
               ...fuel.map((event) => event.toOdometerObservation()),
-              ...maintenance.map((record) => record.toOdometerObservation()),
+              ...maintenance
+                  .map((record) => record.toOdometerObservation())
+                  .whereType<OdometerObservation>(),
             ],
           )
         : _validator.validateOdometerEdit(
@@ -485,11 +496,13 @@ class MaintenanceRecordService {
               ),
               vehicleId: input.vehicleId,
               occurredAt: input.occurredAt.toUtc(),
-              odometerKm: input.odometerKm,
+              odometerKm: odometerKm,
             ),
             existing: [
               ...fuel.map((event) => event.toOdometerObservation()),
-              ...maintenance.map((record) => record.toOdometerObservation()),
+              ...maintenance
+                  .map((record) => record.toOdometerObservation())
+                  .whereType<OdometerObservation>(),
             ],
           );
     if (!chronology.isValid) {
@@ -497,7 +510,7 @@ class MaintenanceRecordService {
       final next = chronology.next;
       throw MaintenanceRecordException(
         MaintenanceRecordIssue.odometerChronologyConflict,
-        previous != null && input.odometerKm < previous.odometerKm
+        previous != null && odometerKm < previous.odometerKm
             ? 'Odometer must be at least ${formatOdometerKm(previous.odometerKm)} km for this date and time.'
             : 'Odometer must not exceed ${formatOdometerKm(next!.odometerKm)} km for this date and time.',
       );
@@ -520,7 +533,9 @@ class MaintenanceRecordService {
     final fuel = await _fuelEvents.findForVehicle(vehicleId);
     final currentOdometer = const OdometerTimelineEngine().resolveCurrent([
       ...fuel.map((event) => event.toOdometerObservation()),
-      ...records.map((record) => record.toOdometerObservation()),
+      ...records
+          .map((record) => record.toOdometerObservation())
+          .whereType<OdometerObservation>(),
     ])?.odometerKm;
     for (final reminder in reminders) {
       if (reminder.completedAt != null) continue;
@@ -572,6 +587,29 @@ class MaintenanceRecordService {
 
   void _cancelNotification(int maintenanceRecordId) {
     unawaited(_cancelNotificationSafely(maintenanceRecordId));
+  }
+
+  Future<double> _storedOdometer(
+    MaintenanceRecordInput input, {
+    double? existingOdometerKm,
+  }) async {
+    if (input.category != MaintenanceCategory.accessories) {
+      return input.odometerKm!;
+    }
+    if (existingOdometerKm != null) return existingOdometerKm;
+    final fuel = await _fuelEvents.findForVehicle(input.vehicleId);
+    final maintenance = await _maintenance.findRecordsForVehicle(
+      input.vehicleId,
+    );
+    return const OdometerTimelineEngine()
+            .resolveCurrent([
+              ...fuel.map((event) => event.toOdometerObservation()),
+              ...maintenance
+                  .map((record) => record.toOdometerObservation())
+                  .whereType<OdometerObservation>(),
+            ])
+            ?.odometerKm ??
+        0;
   }
 
   Future<void> _cancelNotificationSafely(int maintenanceRecordId) async {

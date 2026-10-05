@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../domain/odometer/odometer_value.dart';
 import '../theme/app_theme.dart';
-import '../widgets/fixed_decimal_input_formatter.dart';
 
 class VehicleSetupData {
   const VehicleSetupData({
@@ -109,7 +109,7 @@ class _VehicleSetupFormState extends State<VehicleSetupForm> {
   final _form = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _registration = TextEditingController();
-  final _odometer = TextEditingController(text: '0.0');
+  final _odometer = TextEditingController(text: '0');
 
   @override
   void dispose() {
@@ -145,9 +145,9 @@ class _VehicleSetupFormState extends State<VehicleSetupForm> {
         TextFormField(
           key: const Key('new-vehicle-odometer'),
           controller: _odometer,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: TextInputType.number,
           textInputAction: TextInputAction.next,
-          inputFormatters: const [FixedDecimalInputFormatter(decimalPlaces: 1)],
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           decoration: const InputDecoration(
             labelText: 'Current odometer',
             suffixText: 'km',

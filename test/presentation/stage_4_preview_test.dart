@@ -25,7 +25,7 @@ void main() {
     );
     await tester.enterText(
       find.byKey(const Key('new-vehicle-odometer')),
-      '123450',
+      '12345',
     );
     tester.view.viewInsets = const FakeViewPadding(bottom: 300);
     addTearDown(tester.view.resetViewInsets);
@@ -115,8 +115,11 @@ void main() {
     await tester.tap(find.text('View analytics'));
     await tester.pumpAndSettle();
     expect(find.text('Analytics'), findsOneWidget);
-    expect(find.text('Fuel Logs + Maintenance'), findsOneWidget);
-    expect(find.text('Fuel and maintenance by month'), findsOneWidget);
+    expect(
+      find.text('Fuel Logs + Maintenance (Service + Repairs)'),
+      findsOneWidget,
+    );
+    expect(find.text('Fuel, service and repairs by month'), findsOneWidget);
     expect(find.byKey(const Key('monthly-spending-year')), findsOneWidget);
 
     await tester.tap(
@@ -169,7 +172,7 @@ void main() {
     );
     await tester.enterText(
       find.byKey(const Key('maintenance-odometer')),
-      '110000',
+      '11000',
     );
     await tester.enterText(
       find.byKey(const Key('maintenance-workshop')),
@@ -219,7 +222,7 @@ void main() {
     );
     await tester.enterText(
       find.byKey(const Key('new-vehicle-odometer')),
-      '25000',
+      '2500',
     );
     await tester.tap(find.byKey(const Key('continue-new-vehicle')));
     await tester.pumpAndSettle();

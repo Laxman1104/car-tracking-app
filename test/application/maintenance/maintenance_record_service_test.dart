@@ -53,7 +53,7 @@ void main() {
     double? nextOdometer,
     List<MaintenanceAttachmentInput> newAttachments = const [],
     Set<int> retained = const {},
-    double odometer = 10240,
+    double? odometer = 10240,
     DateTime? occurredAt,
   }) => MaintenanceRecordInput(
     vehicleId: vehicleId,
@@ -159,6 +159,37 @@ void main() {
       expect(after.reminder, isNull);
       expect(files.deleted, hasLength(1));
       expect(scheduler.cancelled, contains(id));
+    },
+  );
+
+  test(
+    'accessories save without an odometer or affecting current mileage',
+    () async {
+      await CreateFuelEvent(fuelEvents: fuel, maintenance: maintenance)(
+        FuelEventInput(
+          vehicleId: vehicleId,
+          occurredAt: DateTime.utc(2027, 3, 9),
+          odometerKm: 10000,
+          fuelBrand: 'Shell',
+          fuelVolumeMillilitres: 30000,
+          costSen: 6000,
+          isFullTank: true,
+        ),
+      );
+
+      final id = await service.create(
+        input(
+          category: MaintenanceCategory.accessories,
+          odometer: null,
+          costSen: 25000,
+        ),
+      );
+
+      expect(
+        (await service.loadRecord(id))!.record.category,
+        MaintenanceCategory.accessories,
+      );
+      expect((await service.loadHistory(vehicleId)).currentOdometerKm, 10000);
     },
   );
 

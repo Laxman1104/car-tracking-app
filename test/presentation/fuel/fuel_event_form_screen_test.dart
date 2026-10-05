@@ -53,7 +53,7 @@ void main() {
 
   Future<void> fillRequiredFields(
     WidgetTester tester, {
-    String odometer = '102400',
+    String odometer = '10240',
     String cost = '68.00',
   }) async {
     await tester.enterText(
@@ -128,7 +128,7 @@ void main() {
     );
     int? savedId;
     await pumpForm(tester, onSaved: (id) => savedId = id);
-    await fillRequiredFields(tester, odometer: '104300');
+    await fillRequiredFields(tester, odometer: '10430');
     await tester.enterText(find.byKey(const Key('fuel-trip-b-field')), '434');
     await tester.pumpAndSettle();
 
@@ -163,11 +163,11 @@ void main() {
       ),
     );
     await pumpForm(tester, occurredAt: DateTime.utc(2026, 6, 14));
-    await fillRequiredFields(tester, odometer: '106000');
+    await fillRequiredFields(tester, odometer: '10600');
     await tapSave(tester);
 
     expect(
-      find.text('Odometer must not exceed 10,500.0 km for this date and time.'),
+      find.text('Odometer must not exceed 10,500 km for this date and time.'),
       findsOneWidget,
     );
     expect((await fuelEvents.findForVehicle(vehicleId)).length, 2);
@@ -179,7 +179,7 @@ void main() {
     await pumpForm(tester);
     await tester.enterText(
       find.byKey(const Key('fuel-odometer-field')),
-      '102400',
+      '10240',
     );
     await tester.enterText(find.byKey(const Key('fuel-litres-field')), '32.4');
     await tester.enterText(find.byKey(const Key('fuel-cost-field')), '68');

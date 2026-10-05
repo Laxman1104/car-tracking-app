@@ -64,7 +64,7 @@ void main() {
     await pump(tester, onSaved: (id) => savedId = id);
     await tester.enterText(
       find.byKey(const Key('maintenance-odometer')),
-      '102400',
+      '10240',
     );
     await tester.enterText(
       find.byKey(const Key('maintenance-workshop')),
@@ -98,6 +98,7 @@ void main() {
     await tester.tap(find.text('Accessories'));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('next-service-odometer')), findsNothing);
+    expect(find.byKey(const Key('maintenance-odometer')), findsNothing);
   });
 
   testWidgets('line item editor saves cleanly after keyboard entry', (

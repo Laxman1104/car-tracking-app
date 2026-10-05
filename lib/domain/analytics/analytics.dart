@@ -13,7 +13,7 @@ class MaintenanceAnalyticsRecord {
 
   final int id;
   final DateTime occurredAt;
-  final double odometerKm;
+  final double? odometerKm;
   final MaintenanceCategory category;
   final int costSen;
   final String? workshop;
@@ -165,7 +165,13 @@ class CarAnalyticsEngine {
         ? cycles
         : cycles.sublist(cycles.length - rollingWindow);
     final totalFuelCost = events.fold<int>(0, (sum, e) => sum + e.costSen);
-    final totalMaintenance = maintenance.fold<int>(
+    final ownershipMaintenance = maintenance
+        .where((record) => record.category != MaintenanceCategory.accessories)
+        .fold<int>(
+      0,
+      (sum, record) => sum + record.costSen,
+    );
+    final allMaintenance = maintenance.fold<int>(
       0,
       (sum, record) => sum + record.costSen,
     );
@@ -183,14 +189,14 @@ class CarAnalyticsEngine {
         (sum, event) => sum + event.fuelVolumeMillilitres,
       ),
       totalFuelCostSen: totalFuelCost,
-      totalMaintenanceCostSen: totalMaintenance,
+      totalMaintenanceCostSen: ownershipMaintenance,
       trackedDistanceKm: _trackedDistance(events, maintenance),
       monthlySpending: _monthlySpending(events, maintenance),
       monthlyFuelEfficiency: _monthlyEfficiency(cycles),
       brandEfficiency: _brandEfficiency(cycles),
       maintenanceCategories: _maintenanceCategories(
         maintenance,
-        totalMaintenance,
+        allMaintenance,
       ),
       upcomingServiceReminders: List.unmodifiable(upcomingServiceReminders),
     );
@@ -225,7 +231,7 @@ class CarAnalyticsEngine {
   ) {
     final values = [
       ...fuel.map((event) => event.odometerKm),
-      ...maintenance.map((record) => record.odometerKm),
+      ...maintenance.map((record) => record.odometerKm).whereType<double>(),
     ];
     if (values.length < 2) return null;
     values.sort();
@@ -243,7 +249,9 @@ class CarAnalyticsEngine {
       final old = values[key] ?? (0, 0);
       values[key] = (old.$1 + event.costSen, old.$2);
     }
-    for (final record in maintenance) {
+    for (final record in maintenance.where(
+      (record) => record.category != MaintenanceCategory.accessories,
+    )) {
       final key = (record.occurredAt.year, record.occurredAt.month);
       final old = values[key] ?? (0, 0);
       values[key] = (old.$1, old.$2 + record.costSen);

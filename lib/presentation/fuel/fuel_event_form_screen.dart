@@ -44,7 +44,7 @@ class _FuelEventFormScreenState extends State<FuelEventFormScreen> {
   ];
 
   final _formKey = GlobalKey<FormState>();
-  final _odometerController = TextEditingController(text: '0.0');
+  final _odometerController = TextEditingController(text: '0');
   final _litresController = TextEditingController(text: '0.00');
   final _costController = TextEditingController(text: '0.00');
   final _tripBController = TextEditingController();
@@ -126,12 +126,8 @@ class _FuelEventFormScreenState extends State<FuelEventFormScreen> {
               TextFormField(
                 key: const Key('fuel-odometer-field'),
                 controller: _odometerController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                inputFormatters: const [
-                  FixedDecimalInputFormatter(decimalPlaces: 1),
-                ],
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
                   hintText: 'Enter current reading',
@@ -148,7 +144,7 @@ class _FuelEventFormScreenState extends State<FuelEventFormScreen> {
                   if (_chronologyError != null) return _chronologyError;
                   final parsed = parseOdometerKm(value ?? '');
                   if (parsed == null) {
-                    return 'Enter an odometer reading to one decimal place.';
+                    return 'Enter a whole-number odometer reading.';
                   }
                   if (parsed < 0) return 'Odometer cannot be negative.';
                   return null;

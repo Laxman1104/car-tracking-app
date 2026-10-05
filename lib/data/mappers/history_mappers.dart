@@ -29,7 +29,8 @@ extension FuelEventDomainMapping on FuelEvent {
 }
 
 extension MaintenanceRecordDomainMapping on MaintenanceRecord {
-  OdometerObservation toOdometerObservation() {
+  OdometerObservation? toOdometerObservation() {
+    if (category == MaintenanceCategory.accessories) return null;
     return OdometerObservation(
       key: OdometerObservationKey(OdometerSource.maintenance, id),
       vehicleId: vehicleId,

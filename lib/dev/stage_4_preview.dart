@@ -522,7 +522,11 @@ class _PreviewHomeState extends State<_PreviewHome> {
                 const SizedBox(height: 10),
                 const Text(
                   'Updated from your latest Fuel or Maintenance record',
-                  style: TextStyle(color: AppColors.textSecondary),
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 11,
+                  ),
                 ),
               ],
             ),

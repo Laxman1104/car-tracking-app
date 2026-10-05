@@ -68,7 +68,9 @@ class UpdateFuelEvent {
       ),
       existing: [
         ...fuel.map((event) => event.toOdometerObservation()),
-        ...maintenance.map((record) => record.toOdometerObservation()),
+        ...maintenance
+            .map((record) => record.toOdometerObservation())
+            .whereType<OdometerObservation>(),
       ],
     );
     if (!chronology.isValid) {

@@ -53,6 +53,14 @@ void main() {
             costSen: 0,
             workshop: 'Warranty Centre',
           ),
+          MaintenanceAnalyticsRecord(
+            id: 3,
+            occurredAt: DateTime.utc(2027, 1, 17),
+            odometerKm: null,
+            category: MaintenanceCategory.accessories,
+            costSen: 15000,
+            workshop: 'Accessory Shop',
+          ),
         ],
       );
 
@@ -65,6 +73,12 @@ void main() {
       expect(analytics.totalOwnershipCostSen, 81600);
       expect(analytics.trackedDistanceKm, 900);
       expect(analytics.monthlySpending.single.totalCostSen, 81600);
+      expect(
+        analytics.maintenanceCategories
+            .firstWhere((e) => e.category == MaintenanceCategory.accessories)
+            .costSen,
+        15000,
+      );
       expect(
         analytics.maintenanceCategories
             .firstWhere((e) => e.category == MaintenanceCategory.repairs)

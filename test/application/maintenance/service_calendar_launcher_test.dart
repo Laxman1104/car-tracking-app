@@ -42,6 +42,6 @@ void main() {
       captured?.arguments['startMillis'],
       expectedStart.millisecondsSinceEpoch,
     );
-    expect(captured?.arguments['description'], contains('5,000.0 km'));
+    expect(captured?.arguments['description'], contains('5,000 km'));
   });
 }

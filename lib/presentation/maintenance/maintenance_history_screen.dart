@@ -506,10 +506,11 @@ class _RecordCard extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Text(
-                    '${formatOdometerKm(record.odometerKm)} km',
-                    style: const TextStyle(color: AppColors.textSecondary),
-                  ),
+                  if (record.category != MaintenanceCategory.accessories)
+                    Text(
+                      '${formatOdometerKm(record.odometerKm)} km',
+                      style: const TextStyle(color: AppColors.textSecondary),
+                    ),
                   const Spacer(),
                   if (bundle.attachments.isNotEmpty)
                     Text(

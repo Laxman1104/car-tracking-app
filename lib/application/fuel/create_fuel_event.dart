@@ -100,7 +100,9 @@ class CreateFuelEvent {
     );
     final existingObservations = <OdometerObservation>[
       ...existingFuel.map((event) => event.toOdometerObservation()),
-      ...existingMaintenance.map((record) => record.toOdometerObservation()),
+      ...existingMaintenance
+          .map((record) => record.toOdometerObservation())
+          .whereType<OdometerObservation>(),
     ];
     final chronology = _validator.validateOdometerInsert(
       candidate: OdometerObservation(

@@ -111,7 +111,7 @@ class _Overview extends StatelessWidget {
       const _Heading('Actual logged costs'),
       _HeroMetric(
         label: 'TOTAL OWNERSHIP SPENDING',
-        labelDetail: 'Fuel Logs + Maintenance',
+        labelDetail: 'Fuel Logs + Maintenance (Service + Repairs)',
         value: formatRinggitFromSen(data.totalOwnershipCostSen),
         icon: Icons.account_balance_wallet_outlined,
       ),
@@ -122,7 +122,7 @@ class _Overview extends StatelessWidget {
             value: formatRinggitFromSen(data.totalFuelCostSen),
           ),
           _Metric(
-            label: 'Maintenance',
+            label: 'Service + repairs',
             value: formatRinggitFromSen(data.totalMaintenanceCostSen),
           ),
           _Metric(
@@ -800,7 +800,7 @@ class _MonthlySpendingListState extends State<_MonthlySpendingList> {
               children: [
                 const Expanded(
                   child: Text(
-                    'Fuel and maintenance by month',
+                    'Fuel, service and repairs by month',
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
@@ -829,7 +829,7 @@ class _MonthlySpendingListState extends State<_MonthlySpendingList> {
               children: [
                 _LegendDot(color: AppColors.primary, label: 'Fuel'),
                 SizedBox(width: 18),
-                _LegendDot(color: AppColors.teal, label: 'Maintenance'),
+                _LegendDot(color: AppColors.teal, label: 'Service + repairs'),
               ],
             ),
             const SizedBox(height: 14),
@@ -891,7 +891,7 @@ class _MonthlyBar extends StatelessWidget {
       message:
           '${_month(entry.year, entry.month)}\n'
           'Fuel ${formatRinggitFromSen(entry.fuelCostSen)}\n'
-          'Maintenance ${formatRinggitFromSen(entry.maintenanceCostSen)}',
+          'Service + repairs ${formatRinggitFromSen(entry.maintenanceCostSen)}',
       child: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [

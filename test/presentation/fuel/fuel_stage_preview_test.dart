@@ -30,7 +30,7 @@ void main() {
 
     await tester.enterText(
       find.byKey(const Key('fuel-odometer-field')),
-      '106000',
+      '10600',
     );
     await tester.tap(find.byKey(const Key('fuel-brand-shell')));
     await tester.enterText(find.byKey(const Key('fuel-litres-field')), '1200');

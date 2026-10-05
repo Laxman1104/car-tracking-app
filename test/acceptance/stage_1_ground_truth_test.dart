@@ -683,7 +683,7 @@ void main() {
       );
       expect(
         (await maintenance.findRecordById(recordId))!
-            .toOdometerObservation()
+            .toOdometerObservation()!
             .odometerKm,
         10240,
       );

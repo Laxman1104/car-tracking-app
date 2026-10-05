@@ -232,13 +232,17 @@ class _DetailsBody extends StatelessWidget {
                           value: formatRinggitFromSen(record.totalCostSen),
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _Fact(
-                          label: 'ODOMETER',
-                          value: '${formatOdometerKm(record.odometerKm)} km',
+                      if (record.category !=
+                          MaintenanceCategory.accessories) ...[
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _Fact(
+                            label: 'ODOMETER',
+                            value:
+                                '${formatOdometerKm(record.odometerKm)} km',
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 10),

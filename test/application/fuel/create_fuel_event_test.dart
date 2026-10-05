@@ -110,7 +110,7 @@ void main() {
             .having(
               (error) => error.message,
               'message',
-              contains('must not exceed 10,250.0 km'),
+              contains('must not exceed 10,250 km'),
             ),
       ),
     );

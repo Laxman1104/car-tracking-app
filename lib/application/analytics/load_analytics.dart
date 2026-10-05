@@ -4,6 +4,7 @@ import '../../data/repositories/maintenance_repository.dart';
 import '../../data/repositories/service_reminder_repository.dart';
 import '../../domain/analytics/analytics.dart';
 import '../../domain/fuel/fuel_cycle.dart';
+import '../../domain/maintenance/maintenance.dart';
 import '../../domain/odometer/odometer_timeline.dart';
 
 class LoadAnalytics {
@@ -28,7 +29,9 @@ class LoadAnalytics {
     };
     final currentOdometer = const OdometerTimelineEngine().resolveCurrent([
       ...fuelRows.map((event) => event.toOdometerObservation()),
-      ...maintenanceRows.map((record) => record.toOdometerObservation()),
+      ...maintenanceRows
+          .map((record) => record.toOdometerObservation())
+          .whereType<OdometerObservation>(),
     ])?.odometerKm;
     final now = DateTime.now().toUtc();
     final upcomingReminders = maintenanceRows
@@ -58,7 +61,9 @@ class LoadAnalytics {
         (record) => MaintenanceAnalyticsRecord(
           id: record.id,
           occurredAt: record.occurredAt,
-          odometerKm: record.odometerKm,
+          odometerKm: record.category == MaintenanceCategory.accessories
+              ? null
+              : record.odometerKm,
           category: record.category,
           costSen: record.totalCostSen,
           workshop: record.workshop,

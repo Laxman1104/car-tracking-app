@@ -57,11 +57,11 @@ class DomainValidator {
   }
 
   MaintenanceValueValidation validateMaintenanceValues({
-    required double odometerKm,
+    required double? odometerKm,
     required int totalCostSen,
   }) {
     final issues = <DomainValidationIssue>{};
-    if (odometerKm < 0) {
+    if (odometerKm != null && odometerKm < 0) {
       issues.add(DomainValidationIssue.odometerCannotBeNegative);
     }
     if (totalCostSen < 0) {

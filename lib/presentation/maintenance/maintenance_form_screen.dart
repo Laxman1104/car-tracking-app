@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../application/maintenance/maintenance_record_service.dart';
 import '../../data/database/app_database.dart';
@@ -40,7 +41,7 @@ class MaintenanceFormScreen extends StatefulWidget {
 
 class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _odometer = TextEditingController(text: '0.0');
+  final _odometer = TextEditingController(text: '0');
   final _workshop = TextEditingController();
   final _serviceTitle = TextEditingController();
   final _totalCost = TextEditingController(text: '0.00');
@@ -154,35 +155,33 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
               ),
               const SizedBox(height: 22),
             ],
-            const _Label('ODOMETER *'),
-            const SizedBox(height: 8),
-            TextFormField(
-              key: const Key('maintenance-odometer'),
-              controller: _odometer,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
+            if (_category != MaintenanceCategory.accessories) ...[
+              const _Label('ODOMETER *'),
+              const SizedBox(height: 8),
+              TextFormField(
+                key: const Key('maintenance-odometer'),
+                controller: _odometer,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.speed_outlined),
+                  suffixText: 'km',
+                ),
+                onChanged: (_) {
+                  if (_chronologyError != null) {
+                    setState(() => _chronologyError = null);
+                  }
+                },
+                validator: (value) {
+                  if (_chronologyError != null) return _chronologyError;
+                  if (parseOdometerKm(value ?? '') == null) {
+                    return 'Enter a whole-number odometer reading.';
+                  }
+                  return null;
+                },
               ),
-              inputFormatters: const [
-                FixedDecimalInputFormatter(decimalPlaces: 1),
-              ],
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.speed_outlined),
-                suffixText: 'km',
-              ),
-              onChanged: (_) {
-                if (_chronologyError != null) {
-                  setState(() => _chronologyError = null);
-                }
-              },
-              validator: (value) {
-                if (_chronologyError != null) return _chronologyError;
-                if (parseOdometerKm(value ?? '') == null) {
-                  return 'Enter an odometer reading to one decimal place.';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 22),
+              const SizedBox(height: 22),
+            ],
             const _Label('WORKSHOP / SERVICE CENTRE *'),
             const SizedBox(height: 8),
             TextFormField(
@@ -316,11 +315,9 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
                       TextFormField(
                         key: const Key('next-service-odometer'),
                         controller: _nextOdometer,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        inputFormatters: const [
-                          FixedDecimalInputFormatter(decimalPlaces: 1),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
                         ],
                         decoration: const InputDecoration(
                           hintText: 'Optional target mileage',
@@ -537,7 +534,9 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
       final input = MaintenanceRecordInput(
         vehicleId: widget.vehicleId,
         occurredAt: _occurredAt,
-        odometerKm: parseOdometerKm(_odometer.text)!,
+        odometerKm: _category == MaintenanceCategory.accessories
+            ? null
+            : parseOdometerKm(_odometer.text)!,
         category: _category,
         workshop: _workshop.text,
         totalCostSen: ScaledDecimalParser.parse(
