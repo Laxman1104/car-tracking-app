@@ -112,6 +112,42 @@ void main() {
       );
     },
   );
+
+  testWidgets('fuel cost basis explains when a completed cycle is required', (
+    tester,
+  ) async {
+    final analytics = const CarAnalyticsEngine().build(
+      fuelEvents: [],
+      fuelHistory: const FuelCycleEngine().build([]),
+      maintenanceRecords: [],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.dark,
+        home: AnalyticsScreen(
+          vehicleId: 1,
+          loadAnalytics: (_) async => analytics,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const Key('analytics-sections')),
+        matching: find.text('Fuel'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'Complete a Full-to-Full cycle to calculate fuel cost per kilometre.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('RM0.00 across'), findsNothing);
+  });
 }
 
 FuelEventSnapshot _event(

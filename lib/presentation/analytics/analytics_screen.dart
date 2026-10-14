@@ -211,10 +211,13 @@ class _Fuel extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Completed-cycle cost uses '
-          '${formatRinggitFromSen(data.completedCycleFuelCostSen)} across '
-          '${data.completedCycleDistanceKm} km. Opening Full purchases and '
-          'pending-cycle fuel are excluded.',
+          data.completedCycles.isEmpty
+              ? 'Complete a Full-to-Full cycle to calculate fuel cost per kilometre.'
+              : 'Completed-cycle cost uses '
+                    '${formatRinggitFromSen(data.completedCycleFuelCostSen)} across '
+                    '${formatOdometerKm(data.completedCycleDistanceKm)} km. '
+                    'Opening Full purchases and pending-cycle fuel are excluded.',
+          key: const Key('completed-cycle-cost-explanation'),
           style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
         ),
         const SizedBox(height: 10),
