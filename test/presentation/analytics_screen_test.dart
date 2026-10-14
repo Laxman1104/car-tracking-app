@@ -40,7 +40,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
-      find.text('Monthly km/L trajectory'),
+      find.text('Monthly Consumption Rate'),
       240,
       scrollable: find.byType(Scrollable).last,
     );
@@ -48,6 +48,16 @@ void main() {
 
     expect(find.byKey(const Key('monthly-efficiency-line-chart')), findsOne);
     expect(find.byType(CustomPaint), findsWidgets);
+    await tester.scrollUntilVisible(
+      find.text('Consumption by Fuel Cycle'),
+      240,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.byKey(const Key('cycle-efficiency-line-chart')), findsOne);
+    expect(
+      find.text('Rolling view of the latest 10 completed cycles.'),
+      findsOneWidget,
+    );
     await tester.scrollUntilVisible(
       find.text('Brand efficiency'),
       240,

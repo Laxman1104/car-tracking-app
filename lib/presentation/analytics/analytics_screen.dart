@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/analytics/analytics.dart';
+import '../../domain/fuel/fuel_cycle.dart';
 import '../../domain/maintenance/maintenance.dart';
 import '../../domain/odometer/odometer_value.dart';
 import '../fuel/fuel_formatters.dart';
@@ -226,7 +227,7 @@ class _Fuel extends StatelessWidget {
           value: formatRinggitFromSen(data.totalFuelCostSen),
         ),
         const SizedBox(height: 24),
-        const _Heading('Monthly km/L trajectory'),
+        const _Heading('Monthly Consumption Rate'),
         if (data.monthlyFuelEfficiency.length < 2)
           const _EmptyPanel(
             icon: Icons.show_chart,
@@ -234,6 +235,15 @@ class _Fuel extends StatelessWidget {
           )
         else
           _MonthlyEfficiencyChart(values: data.monthlyFuelEfficiency),
+        const SizedBox(height: 24),
+        const _Heading('Consumption by Fuel Cycle'),
+        if (data.completedCycles.isEmpty)
+          const _EmptyPanel(
+            icon: Icons.timeline_outlined,
+            title: 'No Completed Cycles Yet',
+          )
+        else
+          _CycleEfficiencyChart(values: data.completedCycles),
         const SizedBox(height: 24),
         const _Heading('Brand efficiency'),
         const Text(
@@ -798,6 +808,150 @@ class _EfficiencyChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _EfficiencyChartPainter oldDelegate) =>
+      oldDelegate.values != values;
+}
+
+class _CycleEfficiencyChart extends StatelessWidget {
+  const _CycleEfficiencyChart({required this.values});
+  final List<CompletedFuelCycle> values;
+
+  @override
+  Widget build(BuildContext context) {
+    final startIndex = values.length > 10 ? values.length - 10 : 0;
+    final visibleValues = values
+        .skip(startIndex)
+        .toList()
+        .indexed
+        .where((entry) => entry.$2.fuelEfficiencyKmPerL != null)
+        .map((entry) => (number: startIndex + entry.$1 + 1, cycle: entry.$2))
+        .toList();
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Completed Full-to-Full cycles',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Rolling view of the latest 10 completed cycles.',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              height: 190,
+              width: double.infinity,
+              child: CustomPaint(
+                key: const Key('cycle-efficiency-line-chart'),
+                painter: _CycleEfficiencyChartPainter(visibleValues),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CycleEfficiencyChartPainter extends CustomPainter {
+  const _CycleEfficiencyChartPainter(this.values);
+  final List<({int number, CompletedFuelCycle cycle})> values;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const left = 38.0;
+    const right = 8.0;
+    const top = 12.0;
+    const bottom = 28.0;
+    final chartWidth = size.width - left - right;
+    final chartHeight = size.height - top - bottom;
+    final rates = values
+        .map((entry) => entry.cycle.fuelEfficiencyKmPerL!)
+        .toList();
+    var minimum = rates.first;
+    var maximum = rates.first;
+    for (final rate in rates.skip(1)) {
+      if (rate < minimum) minimum = rate;
+      if (rate > maximum) maximum = rate;
+    }
+    if (maximum == minimum) {
+      maximum += 1;
+      minimum -= 1;
+    } else {
+      final padding = (maximum - minimum) * 0.18;
+      maximum += padding;
+      minimum -= padding;
+    }
+
+    final grid = Paint()
+      ..color = AppColors.surfaceRaised
+      ..strokeWidth = 1;
+    for (var index = 0; index < 4; index++) {
+      final y = top + chartHeight * index / 3;
+      canvas.drawLine(Offset(left, y), Offset(size.width - right, y), grid);
+      _paintChartText(
+        canvas,
+        (maximum - (maximum - minimum) * index / 3).toStringAsFixed(1),
+        Offset(0, y - 7),
+      );
+    }
+
+    Offset point(int index) {
+      final x = values.length == 1
+          ? left + chartWidth / 2
+          : left + chartWidth * index / (values.length - 1);
+      final normalized = (rates[index] - minimum) / (maximum - minimum);
+      return Offset(x, top + chartHeight * (1 - normalized));
+    }
+
+    if (values.length > 1) {
+      final path = Path()..moveTo(point(0).dx, point(0).dy);
+      for (var index = 1; index < values.length; index++) {
+        path.lineTo(point(index).dx, point(index).dy);
+      }
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = AppColors.teal
+          ..strokeWidth = 3
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round,
+      );
+    }
+    for (var index = 0; index < values.length; index++) {
+      final valuePoint = point(index);
+      canvas.drawCircle(valuePoint, 5, Paint()..color = AppColors.canvas);
+      canvas.drawCircle(valuePoint, 3.5, Paint()..color = AppColors.teal);
+      _paintChartText(
+        canvas,
+        'C${values[index].number}',
+        Offset(valuePoint.dx - 9, size.height - 18),
+      );
+    }
+  }
+
+  void _paintChartText(Canvas canvas, String text, Offset offset) {
+    final painter = TextPainter(
+      text: const TextSpan(
+        style: TextStyle(color: AppColors.textMuted, fontSize: 9),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    painter.text = TextSpan(
+      text: text,
+      style: const TextStyle(color: AppColors.textMuted, fontSize: 9),
+    );
+    painter.layout();
+    painter.paint(canvas, offset);
+  }
+
+  @override
+  bool shouldRepaint(covariant _CycleEfficiencyChartPainter oldDelegate) =>
       oldDelegate.values != values;
 }
 
