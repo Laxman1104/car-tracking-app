@@ -66,6 +66,7 @@ class LoadAnalytics {
               : record.odometerKm,
           category: record.category,
           costSen: record.totalCostSen,
+          recordTitle: record.serviceTitle,
           workshop: record.workshop,
         ),
       ),

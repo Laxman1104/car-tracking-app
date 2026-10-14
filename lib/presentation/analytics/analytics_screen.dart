@@ -314,8 +314,12 @@ class _Maintenance extends StatelessWidget {
                 size: 14,
                 color: _categoryColor(record.category),
               ),
-              title: Text(maintenanceCategoryLabel(record.category)),
+              title: Text(
+                record.recordTitle ??
+                    '${maintenanceCategoryLabel(record.category)} record',
+              ),
               subtitle: Text(
+                '${maintenanceCategoryLabel(record.category)} · '
                 '${formatMaintenanceDate(record.occurredAt.toLocal())} · '
                 '${record.workshop ?? 'Workshop not recorded'}',
               ),

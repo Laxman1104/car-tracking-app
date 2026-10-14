@@ -8,6 +8,7 @@ class MaintenanceAnalyticsRecord {
     required this.odometerKm,
     required this.category,
     required this.costSen,
+    required this.recordTitle,
     required this.workshop,
   });
 
@@ -16,6 +17,7 @@ class MaintenanceAnalyticsRecord {
   final double? odometerKm;
   final MaintenanceCategory category;
   final int costSen;
+  final String? recordTitle;
   final String? workshop;
 }
 

@@ -69,6 +69,7 @@ void main() {
             odometerKm: null,
             category: MaintenanceCategory.accessories,
             costSen: 6332,
+            recordTitle: 'Dash Camera',
             workshop: 'Accessory Shop',
           ),
         ],
@@ -103,6 +104,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Accessories · 1'), findsOneWidget);
+      expect(find.text('Dash Camera', skipOffstage: false), findsOneWidget);
       expect(find.text('RM63.32', skipOffstage: false), findsWidgets);
       expect(
         find.textContaining('RM63.32 ·', skipOffstage: false),

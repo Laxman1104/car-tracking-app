@@ -43,6 +43,7 @@ void main() {
             odometerKm: 10600,
             category: MaintenanceCategory.service,
             costSen: 62000,
+            recordTitle: 'General Service',
             workshop: 'Synthetic Centre',
           ),
           MaintenanceAnalyticsRecord(
@@ -51,6 +52,7 @@ void main() {
             odometerKm: 10600,
             category: MaintenanceCategory.repairs,
             costSen: 0,
+            recordTitle: 'Warranty Repair',
             workshop: 'Warranty Centre',
           ),
           MaintenanceAnalyticsRecord(
@@ -59,6 +61,7 @@ void main() {
             odometerKm: null,
             category: MaintenanceCategory.accessories,
             costSen: 15000,
+            recordTitle: 'Dash Camera',
             workshop: 'Accessory Shop',
           ),
         ],
