@@ -44,7 +44,7 @@ class _FuelEventFormScreenState extends State<FuelEventFormScreen> {
   ];
 
   final _formKey = GlobalKey<FormState>();
-  final _odometerController = TextEditingController(text: '0');
+  final _odometerController = TextEditingController();
   final _litresController = TextEditingController(text: '0.00');
   final _costController = TextEditingController(text: '0.00');
   final _tripBController = TextEditingController();

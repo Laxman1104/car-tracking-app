@@ -89,6 +89,13 @@ void main() {
     expect(find.text('PETRONAS'), findsOneWidget);
     expect(find.text('BHPetrol'), findsOneWidget);
     expect(find.text('Other'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const Key('fuel-odometer-field')))
+          .controller
+          ?.text,
+      isEmpty,
+    );
     expect(odometer.dy, lessThan(shell.dy));
     expect(shell.dy, lessThan(litres.dy));
     expect(litres.dy, lessThan(cost.dy));

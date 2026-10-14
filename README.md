@@ -36,6 +36,7 @@ Open the APK on your Android phone and allow installation from that browser or f
 - Monthly fuel efficiency is labelled Monthly Consumption Rate.
 - A rolling line chart shows consumption for the latest 10 completed fuel cycles.
 - Total Fuel Spending is now the primary card on the Fuel analytics tab.
+- New fuel-event odometer entry starts empty for immediate typing.
 - Full-to-full fuel-cycle mathematics are unchanged.
 
 ### Updating without losing records
