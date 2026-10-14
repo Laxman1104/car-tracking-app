@@ -180,14 +180,12 @@ class _Fuel extends StatelessWidget {
       children: [
         const _Heading('Fuel performance'),
         _HeroMetric(
-          label: 'LATEST COMPLETED CYCLE',
-          value: _rate(latest?.fuelEfficiencyKmPerL, 'km/L'),
+          label: 'TOTAL FUEL SPENDING',
+          labelDetail: 'All logged fuel purchases',
+          value: formatRinggitFromSen(data.totalFuelCostSen),
           icon: Icons.local_gas_station_outlined,
-          detail: latest == null
-              ? null
-              : '${latest.attributedBrand ?? 'Mixed'} · '
-                    '${formatOdometerKm(latest.distanceKm)} km · '
-                    '${_rate(latest.costRinggitPerKm, 'RM/km', prefix: 'RM')}',
+          detail:
+              '${data.fillCount} ${data.fillCount == 1 ? 'record' : 'records'}',
         ),
         _MetricGrid(
           children: [
@@ -223,8 +221,13 @@ class _Fuel extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         _Metric(
-          label: 'Total fuel spending',
-          value: formatRinggitFromSen(data.totalFuelCostSen),
+          label: 'Latest completed cycle',
+          value: _rate(latest?.fuelEfficiencyKmPerL, 'km/L'),
+          detail: latest == null
+              ? 'Complete a Full-to-Full cycle to see its consumption rate.'
+              : '${latest.attributedBrand ?? 'Mixed'} · '
+                    '${formatOdometerKm(latest.distanceKm)} km · '
+                    '${_rate(latest.costRinggitPerKm, 'RM/km', prefix: 'RM')}',
         ),
         const SizedBox(height: 24),
         const _Heading('Monthly Consumption Rate'),
@@ -475,9 +478,10 @@ class _MetricGrid extends StatelessWidget {
 }
 
 class _Metric extends StatelessWidget {
-  const _Metric({required this.label, required this.value});
+  const _Metric({required this.label, required this.value, this.detail});
   final String label;
   final String value;
+  final String? detail;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -507,6 +511,16 @@ class _Metric extends StatelessWidget {
               ),
             ),
           ),
+          if (detail != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              detail!,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 11,
+              ),
+            ),
+          ],
         ],
       ),
     ),

@@ -39,6 +39,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    final fuelTextOrder = tester
+        .widgetList<Text>(find.byType(Text, skipOffstage: false))
+        .map((widget) => widget.data)
+        .whereType<String>()
+        .toList();
+    expect(
+      fuelTextOrder.indexOf('TOTAL FUEL SPENDING'),
+      lessThan(fuelTextOrder.indexOf('Latest completed cycle')),
+    );
+
     await tester.scrollUntilVisible(
       find.text('Monthly Consumption Rate'),
       240,
