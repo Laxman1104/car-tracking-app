@@ -10,15 +10,15 @@ void main() {
   testWidgets('fuel analytics renders a monthly efficiency line chart', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(900, 2400);
+    tester.view.physicalSize = const Size(540, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
     final events = [
-      _event(1, DateTime.utc(2027, 1, 1), 10000, 40000, 7000),
-      _event(2, DateTime.utc(2027, 1, 20), 10500, 35000, 6500),
-      _event(3, DateTime.utc(2027, 2, 20), 11000, 30000, 6000),
+      _event(1, DateTime.utc(2027, 10, 1), 10000, 40000, 7000),
+      _event(2, DateTime.utc(2027, 11, 20), 10500, 35000, 6500),
+      _event(3, DateTime.utc(2027, 12, 20), 11000, 30000, 6000),
     ];
     final analytics = const CarAnalyticsEngine().build(
       fuelEvents: events,
@@ -36,6 +36,18 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+
+    final octoberBar = tester.getRect(
+      find.byKey(const Key('monthly-spending-bar-10')),
+    );
+    final novemberBar = tester.getRect(
+      find.byKey(const Key('monthly-spending-bar-11')),
+    );
+    expect(octoberBar.width, 16);
+    expect(novemberBar.left - octoberBar.right, greaterThanOrEqualTo(8));
+    expect(find.text('RM70'), findsOneWidget);
+    expect(find.text('RM65'), findsOneWidget);
+
     await tester.tap(
       find.descendant(
         of: find.byKey(const Key('analytics-sections')),

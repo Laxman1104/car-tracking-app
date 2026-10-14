@@ -35,6 +35,7 @@ Open the APK on your Android phone and allow installation from that browser or f
 - Empty completed-cycle cost guidance explains when a Full-to-Full cycle is required.
 - Monthly fuel efficiency is labelled Monthly Consumption Rate.
 - A rolling line chart shows consumption for the latest 10 completed fuel cycles.
+- Monthly spending bars now have clearer spacing and single-line value labels.
 - Total Fuel Spending is now the primary card on the Fuel analytics tab.
 - New fuel-event odometer entry starts empty for immediate typing.
 - Full-to-full fuel-cycle mathematics are unchanged.

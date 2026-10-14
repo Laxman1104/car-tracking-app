@@ -1121,69 +1121,99 @@ class _MonthlyBar extends StatelessWidget {
           '${_month(entry.year, entry.month)}\n'
           'Fuel ${formatRinggitFromSen(entry.fuelCostSen)}\n'
           'Service + repairs ${formatRinggitFromSen(entry.maintenanceCostSen)}',
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          if (total > 0)
-            Text(
-              'RM${(total / 100).toStringAsFixed(0)}',
-              style: const TextStyle(fontSize: 9, color: AppColors.textMuted),
-            )
-          else
-            const SizedBox(height: 11),
-          const SizedBox(height: 4),
-          SizedBox(
-            height: chartHeight,
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(5),
-                child: SizedBox(
-                  width: 26,
-                  height: totalHeight,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      if (maintenanceHeight > 0)
-                        Container(
-                          height: maintenanceHeight,
-                          color: AppColors.teal,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            SizedBox(
+              key: Key('monthly-spending-label-${entry.month}'),
+              height: 12,
+              width: double.infinity,
+              child: total > 0
+                  ? FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        _compactRinggit(total),
+                        maxLines: 1,
+                        softWrap: false,
+                        style: const TextStyle(
+                          fontSize: 9,
+                          color: AppColors.textMuted,
                         ),
-                      if (fuelHeight > 0)
-                        Container(height: fuelHeight, color: AppColors.primary),
-                      if (total == 0)
-                        Container(height: 2, color: AppColors.surfaceRaised),
-                    ],
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(height: 4),
+            SizedBox(
+              height: chartHeight,
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(5),
+                  child: SizedBox(
+                    key: Key('monthly-spending-bar-${entry.month}'),
+                    width: 16,
+                    height: totalHeight,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        if (maintenanceHeight > 0)
+                          Container(
+                            height: maintenanceHeight,
+                            color: AppColors.teal,
+                          ),
+                        if (fuelHeight > 0)
+                          Container(
+                            height: fuelHeight,
+                            color: AppColors.primary,
+                          ),
+                        if (total == 0)
+                          Container(height: 2, color: AppColors.surfaceRaised),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 7),
-          Text(
-            const [
-              'Jan',
-              'Feb',
-              'Mar',
-              'Apr',
-              'May',
-              'Jun',
-              'Jul',
-              'Aug',
-              'Sep',
-              'Oct',
-              'Nov',
-              'Dec',
-            ][entry.month - 1],
-            style: const TextStyle(
-              fontSize: 10,
-              color: AppColors.textSecondary,
+            const SizedBox(height: 7),
+            Text(
+              const [
+                'Jan',
+                'Feb',
+                'Mar',
+                'Apr',
+                'May',
+                'Jun',
+                'Jul',
+                'Aug',
+                'Sep',
+                'Oct',
+                'Nov',
+                'Dec',
+              ][entry.month - 1],
+              style: const TextStyle(
+                fontSize: 10,
+                color: AppColors.textSecondary,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+}
+
+String _compactRinggit(int sen) {
+  final ringgit = sen / 100;
+  if (ringgit >= 1000000) {
+    return 'RM${(ringgit / 1000000).toStringAsFixed(1)}m';
+  }
+  if (ringgit >= 1000) {
+    return 'RM${(ringgit / 1000).toStringAsFixed(1)}k';
+  }
+  return 'RM${ringgit.toStringAsFixed(0)}';
 }
 
 class _EmptyPanel extends StatelessWidget {
