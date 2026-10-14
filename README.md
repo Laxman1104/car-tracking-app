@@ -28,12 +28,14 @@ A private-first Android app for tracking fuel usage, maintenance, service remind
 
 Open the APK on your Android phone and allow installation from that browser or file manager if Android prompts you.
 
-## Version 1.0.3 (build 4)
+## Version 1.0.4 (build 5)
 
-- Service, Repairs, and Accessories records can use a custom title in maintenance history.
-- Total Maintenance Expenditure is clearly labelled as Service + Repairs.
-- Accessories have a separate analytics section that keeps their total cost without a misleading percentage.
-- The Settings & Data page shows the installed app version.
+- Maintenance analytics visit cards use the saved record title as their heading.
+- The Home title is cleaner without the status dot.
+- Empty completed-cycle cost guidance explains when a Full-to-Full cycle is required.
+- Monthly fuel efficiency is labelled Monthly Consumption Rate.
+- A rolling line chart shows consumption for the latest 10 completed fuel cycles.
+- Total Fuel Spending is now the primary card on the Fuel analytics tab.
 - Full-to-full fuel-cycle mathematics are unchanged.
 
 ### Updating without losing records
