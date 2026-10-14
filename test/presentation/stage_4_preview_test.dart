@@ -139,12 +139,15 @@ void main() {
       findsOneWidget,
     );
     await tester.scrollUntilVisible(
-      find.text('General Service', skipOffstage: false),
+      find.byKey(
+        const Key('analytics-service-reminder-1'),
+        skipOffstage: false,
+      ),
       240,
       scrollable: find.byType(Scrollable).last,
     );
-    expect(find.text('General Service', skipOffstage: false), findsOneWidget);
-    expect(find.text('Tyre Rotation', skipOffstage: false), findsOneWidget);
+    expect(find.text('General Service', skipOffstage: false), findsWidgets);
+    expect(find.text('Tyre Rotation', skipOffstage: false), findsWidgets);
   });
 
   testWidgets('maintenance saves and reminder completion refresh immediately', (

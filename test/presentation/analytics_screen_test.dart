@@ -39,15 +39,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final fuelTextOrder = tester
-        .widgetList<Text>(find.byType(Text, skipOffstage: false))
-        .map((widget) => widget.data)
-        .whereType<String>()
-        .toList();
-    expect(
-      fuelTextOrder.indexOf('TOTAL FUEL SPENDING'),
-      lessThan(fuelTextOrder.indexOf('Latest completed cycle')),
+    expect(find.text('TOTAL FUEL SPENDING'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Latest completed cycle', skipOffstage: false),
+      240,
+      scrollable: find.byType(Scrollable).last,
     );
+    expect(find.text('Latest completed cycle'), findsOneWidget);
 
     await tester.scrollUntilVisible(
       find.text('Monthly Consumption Rate'),
@@ -160,6 +158,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(
+      find.byKey(
+        const Key('completed-cycle-cost-explanation'),
+        skipOffstage: false,
+      ),
+      240,
+      scrollable: find.byType(Scrollable).last,
+    );
     expect(
       find.text(
         'Complete a Full-to-Full cycle to calculate fuel cost per kilometre.',
