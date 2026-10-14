@@ -430,20 +430,7 @@ class _PreviewHomeState extends State<_PreviewHome> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: AppColors.teal,
-              shape: BoxShape.circle,
-            ),
-            child: SizedBox.square(dimension: 12),
-          ),
-          SizedBox(width: 12),
-          Text('Car Tracker'),
-        ],
-      ),
+      title: const Text('Car Tracker'),
       actions: [
         IconButton(
           tooltip: 'Settings',
