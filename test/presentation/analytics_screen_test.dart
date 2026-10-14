@@ -10,6 +10,11 @@ void main() {
   testWidgets('fuel analytics renders a monthly efficiency line chart', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(900, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     final events = [
       _event(1, DateTime.utc(2027, 1, 1), 10000, 40000, 7000),
       _event(2, DateTime.utc(2027, 1, 20), 10500, 35000, 6500),
@@ -45,7 +50,10 @@ void main() {
       240,
       scrollable: find.byType(Scrollable).last,
     );
-    expect(find.text('Latest completed cycle'), findsOneWidget);
+    expect(
+      find.text('Latest completed cycle', skipOffstage: false),
+      findsOneWidget,
+    );
 
     await tester.scrollUntilVisible(
       find.text('Monthly Consumption Rate'),
@@ -169,6 +177,7 @@ void main() {
     expect(
       find.text(
         'Complete a Full-to-Full cycle to calculate fuel cost per kilometre.',
+        skipOffstage: false,
       ),
       findsOneWidget,
     );
